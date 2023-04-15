@@ -140,7 +140,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   curHealth: 0
   maxHealth: 20
-  movementSpeed: 12
+  movementSpeed: 8
   expToGive: 25
   rb: {fileID: 4570307495212584649}
   animator: {fileID: 6849778949500866162}

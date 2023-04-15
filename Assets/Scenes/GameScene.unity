@@ -403,7 +403,7 @@ MonoBehaviour:
   - {fileID: 980474472185905900, guid: 683531d2b7018754082efae6684ffa86, type: 3}
   - {fileID: 980474472185905900, guid: 6a74b3665181cbc48889d609cb7a483f, type: 3}
   - {fileID: 980474472185905900, guid: 62da0e5b20a940d47a9821dd13ad2ae9, type: 3}
-  spawnInterval: 1
+  spawnInterval: 2
   maxEnemy: 40
   endPoint: {fileID: 396326147}
   infiniteEnemies: 0
