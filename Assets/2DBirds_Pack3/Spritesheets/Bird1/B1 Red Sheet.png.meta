@@ -63,7 +63,7 @@ TextureImporter:
       213: 5766705736399520790
     second: B1 Red Sheet_19
   externalObjects: {}
-  serializedVersion: 11
+  serializedVersion: 12
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -83,6 +83,8 @@ TextureImporter:
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMasterTextureLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -114,10 +116,14 @@ TextureImporter:
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
   maxTextureSizeSet: 0
   compressionQualitySet: 0
   textureFormatSet: 0
+  ignorePngGamma: 0
   applyGammaDecoding: 0
+  cookieLightType: 1
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
@@ -133,6 +139,42 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 3
     buildTarget: Standalone
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Server
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: WebGL
     maxTextureSize: 4096
     resizeAlgorithm: 0
     textureFormat: -1
@@ -576,6 +618,27 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
+    nameFileIdTable:
+      B1 Red Sheet_0: 5978898516894778253
+      B1 Red Sheet_1: -3526892376511511948
+      B1 Red Sheet_10: -3375152686746581683
+      B1 Red Sheet_11: -7567366288939379691
+      B1 Red Sheet_12: -4177861970456049376
+      B1 Red Sheet_13: -4197343771585983433
+      B1 Red Sheet_14: 8718492207333442798
+      B1 Red Sheet_15: -6333293541924129432
+      B1 Red Sheet_16: -4148862981152461599
+      B1 Red Sheet_17: 8059029774980126704
+      B1 Red Sheet_18: 5455957952543615079
+      B1 Red Sheet_19: 5766705736399520790
+      B1 Red Sheet_2: 1775141773266342135
+      B1 Red Sheet_3: 5771519137474996286
+      B1 Red Sheet_4: -488115453221668911
+      B1 Red Sheet_5: -1288706999071909774
+      B1 Red Sheet_6: -8011446790433834103
+      B1 Red Sheet_7: 1855789664959171303
+      B1 Red Sheet_8: 4015586864262570214
+      B1 Red Sheet_9: 9201495076655989131
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0

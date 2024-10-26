@@ -6,13 +6,13 @@ public class ArrowAddingVFXHandler : VFXHandler
 {
     public override void Init()
     {
-        SignalManager.Instance.AddListener<OnAddArrows>(OnAddArrows);
+        SignalManager.Instance.AddObserver<OnAddArrows>(OnAddArrows);
         base.Init();
     }
 
     public override void Dinit()
     {
-        SignalManager.Instance.RemoveListener<OnAddArrows>(OnAddArrows);
+        SignalManager.Instance.RemoveObserver<OnAddArrows>(OnAddArrows);
         base.Dinit();
     }
 

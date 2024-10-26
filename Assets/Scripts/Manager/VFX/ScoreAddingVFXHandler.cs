@@ -6,13 +6,13 @@ public class ScoreAddingVFXHandler : VFXHandler
 {
     public override void Init()
     {
-        SignalManager.Instance.AddListener<OnBalloonBurst>(UpdateScore);
+        SignalManager.Instance.AddObserver<OnBalloonBurst>(UpdateScore);
         base.Init();
     }
 
     public override void Dinit()
     {
-        SignalManager.Instance.RemoveListener<OnBalloonBurst>(UpdateScore);
+        SignalManager.Instance.RemoveObserver<OnBalloonBurst>(UpdateScore);
         base.Dinit();
     }
 

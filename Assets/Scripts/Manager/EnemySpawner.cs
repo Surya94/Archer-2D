@@ -12,13 +12,13 @@ public class EnemySpawner : Singleton<EnemySpawner>
 
     private int enemyCnt;
     private float spawnIntervalTimer;
-    private Queue<GameObject> enemyPool;
+    //private Queue<GameObject> enemyPool;
 
     // Start is called before the first frame update
     void Start()
     {
         spawnIntervalTimer = 0;
-        enemyPool = new Queue<GameObject>();
+        //enemyPool = new Queue<GameObject>();
     }
 
     // Update is called once per frame
@@ -44,28 +44,19 @@ public class EnemySpawner : Singleton<EnemySpawner>
 
         if (spawnPoint != null)
         {
-            GameObject spawnedEnemy;
-            if (enemyPool.Count > 0)
+            var spawnedEnemy = ObjectPoolManager.Instance.SpawnObject(lstOfEnemies[Random.Range(0, lstOfEnemies.Count)], spawnPoint.position, spawnPoint.rotation);
+            if (spawnedEnemy != null)
             {
-                spawnedEnemy = enemyPool.Dequeue();
-                spawnedEnemy.SetActive(true);
+                spawnedEnemy.transform.position = spawnPoint.position;
+                spawnedEnemy.transform.rotation = spawnPoint.rotation;
+                spawnedEnemy.GotToTarget(endPoint);
+                enemyCnt++;
             }
-            else
-            {
-                spawnedEnemy = Instantiate(lstOfEnemies[UnityEngine.Random.Range(0, lstOfEnemies.Count)].gameObject, spawnPoint.position, spawnPoint.rotation);
-            }
-
-            spawnedEnemy.transform.position = spawnPoint.position;
-            spawnedEnemy.transform.rotation = spawnPoint.rotation;
-            spawnedEnemy.GetComponent<Enemy>().GotToTarget(endPoint);
-            enemyCnt++;
         }
     }
-
-    public void ReturnEnemyToPool(GameObject enemy)
+    
+    public void ReturnEnemyToPool(Enemy enemy)
     {
-        enemy.SetActive(false);
-        enemyPool.Enqueue(enemy);
-        enemyCnt--;
+        ObjectPoolManager.Instance.DespawnObject(enemy);
     }
 }

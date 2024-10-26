@@ -21,4 +21,16 @@ public class SoundManger : Singleton<SoundManger>
     {
         
     }
+    public void PlayFireSound(Vector3 pos = default)
+    {
+        AudioSource.PlayClipAtPoint(BowSoundManager.fireSound, pos);
+    }
+    public void PlayLoadSound(Vector3 pos = default)
+    {
+        AudioSource.PlayClipAtPoint(BowSoundManager.loadSound, pos);
+    }
+    public void PlayHitSound(Vector3 pos = default)
+    {
+        AudioSource.PlayClipAtPoint(BowSoundManager.hitSound, pos);
+    }
 }

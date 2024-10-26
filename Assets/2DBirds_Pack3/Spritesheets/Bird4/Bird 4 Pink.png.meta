@@ -63,7 +63,7 @@ TextureImporter:
       213: 6827900652555736024
     second: Bird 4 Pink_19
   externalObjects: {}
-  serializedVersion: 11
+  serializedVersion: 12
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -83,6 +83,8 @@ TextureImporter:
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMasterTextureLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -114,10 +116,14 @@ TextureImporter:
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
   maxTextureSizeSet: 0
   compressionQualitySet: 0
   textureFormatSet: 0
+  ignorePngGamma: 0
   applyGammaDecoding: 0
+  cookieLightType: 1
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
@@ -141,6 +147,42 @@ TextureImporter:
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 1
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Server
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: WebGL
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
@@ -576,6 +618,27 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
+    nameFileIdTable:
+      Bird 4 Pink_0: 6291438906335971204
+      Bird 4 Pink_1: 1723761494433262357
+      Bird 4 Pink_10: 84219866786323160
+      Bird 4 Pink_11: 3961037749693990449
+      Bird 4 Pink_12: -7498432172554943403
+      Bird 4 Pink_13: -4948604162761665547
+      Bird 4 Pink_14: -1623911114173666715
+      Bird 4 Pink_15: 2044300684603500877
+      Bird 4 Pink_16: -7335728529861489987
+      Bird 4 Pink_17: 4316791229638103848
+      Bird 4 Pink_18: -7607970334724773782
+      Bird 4 Pink_19: 6827900652555736024
+      Bird 4 Pink_2: -7559308606375038879
+      Bird 4 Pink_3: -5233176523693278099
+      Bird 4 Pink_4: 2120887532326085212
+      Bird 4 Pink_5: -6053590087125969176
+      Bird 4 Pink_6: 3654322713013057507
+      Bird 4 Pink_7: -1521000113489750748
+      Bird 4 Pink_8: 566968362545019046
+      Bird 4 Pink_9: -8990920094173756547
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0

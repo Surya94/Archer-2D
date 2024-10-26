@@ -26,11 +26,10 @@ public class Bow : MonoBehaviour
     private GameObject newArrow;
     private float drawDistance;
     private float waitTimeTimer = 0.5f;
-    private List<GameObject> allAvaiableArrows;
     private ScoreManager scoreManager;
     void Start()
-    {
-        scoreManager = DependencyResolver.Resolve<ScoreManager>();
+    {        
+         scoreManager = DependencyResolver.Resolve<ScoreManager>();
         if (bowData.enableAimAssit)
         {
             points = new GameObject[bowData.numberOfPoints];
@@ -56,12 +55,12 @@ public class Bow : MonoBehaviour
             {
                 SignalManager.Instance.DispatchSignal(new OnAddArrows(-1));
                 waitTimeTimer = bowData.waitTime;
-                newArrow = GetUnusedObject();// Instantiate(arroeObj, drawStartPoint.position, drawStartPoint.rotation);
+                var arrow = ObjectPoolManager.Instance.SpawnObject(arroeObj.GetComponent<Arrow>(), drawStartPoint.position, drawStartPoint.rotation);
+                newArrow=arrow.gameObject;
                 newArrow.SetActive(true);
                 newArrow.transform.position = drawStartPoint.position;
                 newArrow.transform.rotation = drawStartPoint.rotation;
                 newArrow.transform.parent = drawStartPoint.parent;
-                var arrow = newArrow.GetComponent<Arrow>();
                 arrow.rb.velocity = Vector2.zero;
                 arrow.rb.isKinematic = true;
                 arrow.isFired = false;
@@ -97,23 +96,6 @@ public class Bow : MonoBehaviour
             DrawAimPoints();
     }
 
-    private GameObject GetUnusedObject()
-    {
-        if (allAvaiableArrows == null)
-            allAvaiableArrows = new List<GameObject>();
-
-        foreach (var item in allAvaiableArrows)
-        {
-            if (!item.activeSelf)
-            {
-                return item;
-            }
-        }
-        var newArrow = Instantiate(arroeObj, drawStartPoint.position, drawStartPoint.rotation);
-        allAvaiableArrows.Add(newArrow);
-        return newArrow;
-    }
-
     private void OnStartDrag()
     {
         isDragStarted = true;
@@ -144,7 +126,7 @@ public class Bow : MonoBehaviour
         if (canPlayLoadSound && isDraging)
         {
             canPlayLoadSound = false;
-            SoundManger.Instance.BowSoundManager.PlayLoadSound();
+            SoundManger.Instance.PlayLoadSound();
         }
     }
 
@@ -201,7 +183,7 @@ public class Bow : MonoBehaviour
         arrow.isFired = true;
         newArrow = null;
         ResetBowString();
-        SoundManger.Instance.BowSoundManager.PlayFireSound();
+        SoundManger.Instance.PlayFireSound();
     }
 
     private Vector2 pointPosition(float t)

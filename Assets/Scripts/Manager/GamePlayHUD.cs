@@ -14,9 +14,9 @@ public class GamePlayHUD : MonoBehaviour
     {
         scoreManager = DependencyResolver.Resolve<ScoreManager>();
         scoreManager.ResetGame();
-        SignalManager.Instance.AddListener<OnUpdateScore>(UpdateScore);
-        SignalManager.Instance.AddListener<OnArrowsAdded>(UpdateArrows);
-        UpdateScore();
+        SignalManager.Instance.AddObserver<OnUpdateScore>(UpdateScore);
+        SignalManager.Instance.AddObserver<OnArrowsAdded>(UpdateArrows);
+        SetScore();
     }
 
     private void UpdateArrows(OnArrowsAdded signalData)
@@ -27,16 +27,16 @@ public class GamePlayHUD : MonoBehaviour
 
     void OnDestory()
     {
-        SignalManager.Instance.RemoveListener<OnUpdateScore>(UpdateScore);
-        SignalManager.Instance.RemoveListener<OnArrowsAdded>(UpdateArrows);
+        SignalManager.Instance.RemoveObserver<OnUpdateScore>(UpdateScore);
+        SignalManager.Instance.RemoveObserver<OnArrowsAdded>(UpdateArrows);
     }
 
     private void UpdateScore(OnUpdateScore signalData)
     {
-        UpdateScore();
+        SetScore();
     }
 
-    private void UpdateScore()
+    private void SetScore()
     {
         if (score != null)
             score.text ="Score: "+ scoreManager.CurrentScore.ToString();

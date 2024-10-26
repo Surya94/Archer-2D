@@ -31,7 +31,6 @@ public class VFXHandler : MonoBehaviour
 
     public GameObject GetUnusedObject()
     {
-
         GameObject spawnedObject;
         if (vfxobjectPool.Count > 0)
         {

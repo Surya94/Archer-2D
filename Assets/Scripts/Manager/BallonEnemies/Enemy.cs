@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 
-public class Enemy : MonoBehaviour
+public class Enemy : PoolableObject
 {
     public int curHealth;
     public int maxHealth;
@@ -17,7 +17,7 @@ public class Enemy : MonoBehaviour
         curHealth = maxHealth;       
     }
 
-    public void TakeDamage(int damage,Vector2 dir, float val)
+    public void TakeDamage(int damage)
     {
         curHealth -= damage;
         if (curHealth <= 0)
@@ -50,6 +50,6 @@ public class Enemy : MonoBehaviour
     private void DestroyEnemy()
     {
         animator.SetTrigger("Reset");
-        EnemySpawner.Instance.ReturnEnemyToPool(this.gameObject);
+        EnemySpawner.Instance.ReturnEnemyToPool(this);
     }
 }

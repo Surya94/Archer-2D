@@ -2,8 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.EventSystems.EventTrigger;
 
-public class Arrow : MonoBehaviour
+public class Arrow : PoolableObject
 {
     public Rigidbody2D rb;
     public bool isFired;
@@ -15,7 +16,7 @@ public class Arrow : MonoBehaviour
     public Collider2D myCollider;
     public string ID;
     private float arrowForce;
-    private int hitCount;
+    private bool isHit;
     private void Start()
     {
         InitArrow();
@@ -26,7 +27,7 @@ public class Arrow : MonoBehaviour
         ID = Guid.NewGuid().ToString();
         myCollider.enabled = false;
         trailRenderer.emitting = false;
-        hitCount = 0;
+        isHit = false;
     }
 
     void Update()
@@ -43,29 +44,25 @@ public class Arrow : MonoBehaviour
     {
         myCollider.enabled = true;
         arrowForce = launchForce;
-        Invoke("DisableArrow", destoryTime);
-        //Destroy(gameObject, destoryTime);
     }
 
-    private void DisableArrow()
+    public void DisableArrow()
     {
+        if (!isHit)
+            SignalManager.Instance.DispatchSignal(new OnUpdateStreak() { isStreakMaintained = false });
         InitArrow();
         arrowForce = 0;
-        gameObject.SetActive(false);
+        ObjectPoolManager.Instance.DespawnObject(this);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        //rb.velocity = Vector2.zero;
-        //rb.isKinematic = true;
-        //myCollider.enabled = false;
         if (collision.transform.CompareTag("Enemy"))
         {
-            collision.transform.GetComponent<Enemy>().TakeDamage(damage, transform.right.normalized, pushForce * arrowForce);
-            hitCount++;
-            if (hitCount >= 2)
-                SignalManager.Instance.DispatchSignal(new OnAddArrows(1));
-            SoundManger.Instance.BowSoundManager.PlayHitSound();
+            collision.transform.GetComponent<Enemy>().TakeDamage(damage);
+            isHit = true;
+            SignalManager.Instance.DispatchSignal(new OnUpdateStreak() { isStreakMaintained=true});
+            SoundManger.Instance.PlayHitSound();
 
         }
     }

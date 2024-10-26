@@ -23,17 +23,34 @@ public class ScoreManager
     }
 
     public int arrowCount { get; set; }
+    public int streakCount { get; set; }
 
     public ScoreManager()
     {
-        SignalManager.Instance.AddListener<OnBalloonBurst>(UpdateScore);
-        SignalManager.Instance.AddListener<OnAddArrows>(GiveArrows);
+        SignalManager.Instance.AddObserver<OnBalloonBurst>(UpdateScore);
+        SignalManager.Instance.AddObserver<OnAddArrows>(GiveArrows);
+        SignalManager.Instance.AddObserver<OnUpdateStreak>(UpdateStreak);
     }
 
     ~ScoreManager()
     {
-        SignalManager.Instance.RemoveListener<OnBalloonBurst>(UpdateScore);
-        SignalManager.Instance.RemoveListener<OnAddArrows>(GiveArrows);
+        SignalManager.Instance.RemoveObserver<OnBalloonBurst>(UpdateScore);
+        SignalManager.Instance.RemoveObserver<OnAddArrows>(GiveArrows);
+        SignalManager.Instance.RemoveObserver<OnUpdateStreak>(UpdateStreak);
+    }
+
+    private void UpdateStreak(OnUpdateStreak signalData)
+    {
+        if (signalData.isStreakMaintained)
+        {
+            streakCount++;
+            if (streakCount > 1)
+                SignalManager.Instance.DispatchSignal(new OnAddArrows(1));
+        }
+        else
+        {
+            streakCount = 0;
+        }
     }
 
     private void GiveArrows(OnAddArrows signalData)

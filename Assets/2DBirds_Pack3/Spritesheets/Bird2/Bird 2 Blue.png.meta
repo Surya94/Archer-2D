@@ -63,7 +63,7 @@ TextureImporter:
       213: 1160630528355643587
     second: Bird 2 Blue_19
   externalObjects: {}
-  serializedVersion: 11
+  serializedVersion: 12
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -83,6 +83,8 @@ TextureImporter:
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMasterTextureLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -114,10 +116,14 @@ TextureImporter:
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
   maxTextureSizeSet: 0
   compressionQualitySet: 0
   textureFormatSet: 0
+  ignorePngGamma: 0
   applyGammaDecoding: 0
+  cookieLightType: 1
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
@@ -141,6 +147,42 @@ TextureImporter:
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 1
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Server
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: WebGL
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
@@ -576,6 +618,27 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
+    nameFileIdTable:
+      Bird 2 Blue_0: -7068613016846842766
+      Bird 2 Blue_1: -264668129248266846
+      Bird 2 Blue_10: 7938358133456345584
+      Bird 2 Blue_11: -2695791116014168045
+      Bird 2 Blue_12: 2160072547002740045
+      Bird 2 Blue_13: -1198534323211369122
+      Bird 2 Blue_14: -6473795737921632282
+      Bird 2 Blue_15: -8142003942594100440
+      Bird 2 Blue_16: -2167519667812853109
+      Bird 2 Blue_17: -5714431626101362010
+      Bird 2 Blue_18: 5640953408524247507
+      Bird 2 Blue_19: 1160630528355643587
+      Bird 2 Blue_2: 7912534716954576407
+      Bird 2 Blue_3: -5995878203541098936
+      Bird 2 Blue_4: -5499180150407023309
+      Bird 2 Blue_5: -6915218616232025842
+      Bird 2 Blue_6: -2689185870073426918
+      Bird 2 Blue_7: 7773104560793754897
+      Bird 2 Blue_8: -3727270862300018779
+      Bird 2 Blue_9: -3999249415087781081
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0

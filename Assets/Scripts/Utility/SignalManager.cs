@@ -1,53 +1,107 @@
 using UnityEngine;
-using System.Collections;
+using System;
 using System.Collections.Generic;
 
 public class SignalManager : Singleton<SignalManager>
 {
+    private Dictionary<Type, List<object>> parameterizedObservers = new Dictionary<Type, List<object>>();
+    private Dictionary<Type, List<Action>> parameterlessObservers = new Dictionary<Type, List<Action>>();
 
-    public delegate void SignalEvent<T>(T signalData) where T : class;
-    private Dictionary<System.Type, object> signals;
-
-    public SignalManager()
+    public void AddObserver<T>(Action<T> observer) where T : class
     {
-        signals = new Dictionary<System.Type, object>();
+        Type eventType = typeof(T);
+
+        if (!parameterizedObservers.ContainsKey(eventType))
+        {
+            parameterizedObservers[eventType] = new List<object>();
+        }
+
+        List<object> observerList = parameterizedObservers[eventType];
+        observerList.Add(observer);
     }
 
-    public void AddListener<T>(SignalEvent<T> listener) where T : class
+    public void AddObserver<T>(Action observer) where T : class
     {
-        SignalEvent<T> signalEvent;
-        System.Type signalType = typeof(T);
-        if (signals.TryGetValue(signalType, out object signal))
+        Type eventType = typeof(T);
+
+        if (!parameterlessObservers.ContainsKey(eventType))
         {
-            signalEvent = (SignalEvent<T>)signal;
-            signalEvent += listener;
+            parameterlessObservers[eventType] = new List<Action>();
         }
-        else
-        {
-            signalEvent = listener;
-        }
-        signals[signalType] = signalEvent;
+
+        List<Action> observerList = parameterlessObservers[eventType];
+        observerList.Add(observer);
     }
 
-    public void RemoveListener<T>(SignalEvent<T> listener) where T : class
+    public void RemoveObserver<T>(Action<T> observer) where T : class
     {
-        System.Type signalType = typeof(T);
-        if (signals.ContainsKey(signalType))
+        Type eventType = typeof(T);
+
+        if (parameterizedObservers.ContainsKey(eventType))
         {
-            SignalEvent<T> signalEvent = (SignalEvent<T>)signals[signalType];
-            signalEvent -= listener;
-            signals[signalType] = signalEvent;
+            List<object> observerList = parameterizedObservers[eventType];
+            observerList.Remove(observer);
+
+            if (observerList.Count == 0)
+            {
+                parameterizedObservers.Remove(eventType);
+            }
+        }
+    }
+
+    public void RemoveObserver<T>(Action observer) where T : class
+    {
+        Type eventType = typeof(T);
+
+        if (parameterlessObservers.ContainsKey(eventType))
+        {
+            List<Action> observerList = parameterlessObservers[eventType];
+            observerList.Remove(observer);
+
+            if (observerList.Count == 0)
+            {
+                parameterlessObservers.Remove(eventType);
+            }
         }
     }
 
     public void DispatchSignal<T>(T signalData) where T : class
     {
-        SignalEvent<T> signalEvent;
-        System.Type signalType = typeof(T);
-        if (signals.TryGetValue(signalType, out object signal))
+        Type eventType = typeof(T);
+
+        if (parameterizedObservers.ContainsKey(eventType))
         {
-            signalEvent = (SignalEvent<T>)signal;
-            signalEvent.Invoke(signalData);
+            List<object> observerList = parameterizedObservers[eventType];
+
+            foreach (var observer in observerList)
+            {
+                ((Action<T>)observer).Invoke(signalData);
+            }
+        }
+
+        if (parameterlessObservers.ContainsKey(eventType))
+        {
+            List<Action> observerList = parameterlessObservers[eventType];
+
+            foreach (var observer in observerList)
+            {
+                observer.Invoke();
+            }
+        }
+    }
+
+    public void DispatchSignal<T>() where T : class
+    {
+        Type eventType = typeof(T);
+
+        if (parameterlessObservers.ContainsKey(eventType))
+        {
+            List<Action> observerList = parameterlessObservers[eventType];
+
+            foreach (var observer in observerList)
+            {
+                observer.Invoke();
+            }
         }
     }
 }
