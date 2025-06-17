@@ -12,8 +12,8 @@ public class ScoreManager
 
     public int CurrentScore
     {
-        get=> PlayerPrefs.GetInt(CURRENT_SCORE, 0);
-        set => PlayerPrefs.SetInt(CURRENT_SCORE,value);
+        get => PlayerPrefs.GetInt(CURRENT_SCORE, 0);
+        set => PlayerPrefs.SetInt(CURRENT_SCORE, value);
     }
 
     public int PreviousScore

@@ -13,6 +13,8 @@ public class Bow : MonoBehaviour
     public Transform endPointB;
     public LineRenderer lineRenderer;
     public BowData bowData;
+    public float minAngle = -45f; // Minimum angle (e.g., -45 degrees)
+    public float maxAngle = 45f;  // Maximum angle (e.g., 45 degrees)
 
     private float launchForce;
 
@@ -61,7 +63,7 @@ public class Bow : MonoBehaviour
                 newArrow.transform.position = drawStartPoint.position;
                 newArrow.transform.rotation = drawStartPoint.rotation;
                 newArrow.transform.parent = drawStartPoint.parent;
-                arrow.rb.velocity = Vector2.zero;
+                arrow.rb.linearVelocity = Vector2.zero;
                 arrow.rb.isKinematic = true;
                 arrow.isFired = false;
                 ResetBowString();
@@ -117,7 +119,15 @@ public class Bow : MonoBehaviour
         isDraging = launchForce > bowData.MinForce;
         if (isDraging)
         {
-            transform.right = direction;
+            //transform.right = direction;
+            // Calculate the angle of the bow
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+            // Clamp the angle to the specified range
+            angle = Mathf.Clamp(angle, minAngle, maxAngle);
+
+            // Apply the clamped angle to the bow's rotation
+            transform.rotation = Quaternion.Euler(0, 0, angle);
         }
         else
         {
@@ -179,7 +189,7 @@ public class Bow : MonoBehaviour
         var arrow = newArrow.GetComponent<Arrow>();
         arrow.SetFireData(launchForce / bowData.MaxForce);
         arrow.rb.isKinematic = false;
-        arrow.rb.velocity = transform.right * launchForce;
+        arrow.rb.linearVelocity = transform.right * launchForce;
         arrow.isFired = true;
         newArrow = null;
         ResetBowString();

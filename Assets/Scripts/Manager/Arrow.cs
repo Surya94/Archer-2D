@@ -35,7 +35,7 @@ public class Arrow : PoolableObject
         if (isFired)
         {
             trailRenderer.emitting = true;
-            float angle = Mathf.Atan2(rb.velocity.y, rb.velocity.x) * Mathf.Rad2Deg;
+            float angle = Mathf.Atan2(rb.linearVelocity.y, rb.linearVelocity.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
         }
     }
@@ -53,6 +53,7 @@ public class Arrow : PoolableObject
         InitArrow();
         arrowForce = 0;
         ObjectPoolManager.Instance.DespawnObject(this);
+        SignalManager.Instance.DispatchSignal(new OnArrowDestoryed());
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
