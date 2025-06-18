@@ -196,3 +196,35 @@ Received Import Request.
 Start importing Assets/Scripts/Manager/Bow.cs using Guid(e4072dca9c481fd49976abd57e68256b) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '47a36acdd5a07234550874f035e6c499') in 0.0329647 seconds
 Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
 
+========================================================================
+Received Import Request.
+  Time since last request: 1191.850334 seconds.
+  path: Assets/Scripts/Models/OnUpdateScore.cs
+  artifactKey: Guid(18301cfa6d278b14e93703e0b3e82247) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scripts/Models/OnUpdateScore.cs using Guid(18301cfa6d278b14e93703e0b3e82247) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '9dec8a6d5cf363e393d72203a6b9f364') in 0.021012 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.957862 seconds.
+  path: Assets/Scripts/Models/OnArrowsAdded.cs
+  artifactKey: Guid(c221bd412a5d98a4daeaeb0fa5444543) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scripts/Models/OnArrowsAdded.cs using Guid(c221bd412a5d98a4daeaeb0fa5444543) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '01dbc493e081cc1ce874df8f6568929f') in 0.0012582 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+========================================================================
+Received Import Request.
+  Time since last request: 1.070747 seconds.
+  path: Assets/Scripts/Models/OnArrowDestoryed.cs
+  artifactKey: Guid(35f01b70250c7954d8c12b331d3d8d3e) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scripts/Models/OnArrowDestoryed.cs using Guid(35f01b70250c7954d8c12b331d3d8d3e) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '4387d1222ac74375ff98e247fef92b88') in 0.0006197 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+========================================================================
+Received Import Request.
+  Time since last request: 57.850541 seconds.
+  path: Assets/Scripts/Manager/GamePlayHUD.cs
+  artifactKey: Guid(e7830bcb9da82364d8ef4c7028348457) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scripts/Manager/GamePlayHUD.cs using Guid(e7830bcb9da82364d8ef4c7028348457) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'bcb63b38ab17ce71cb49930e554b3d82') in 0.0009608 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
