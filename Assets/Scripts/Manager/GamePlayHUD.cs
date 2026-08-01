@@ -13,7 +13,6 @@ public class GamePlayHUD : MonoBehaviour
     void Start()
     {
         scoreManager = DependencyResolver.Resolve<ScoreManager>();
-        scoreManager.ResetGame();
         SignalManager.Instance.AddObserver<OnUpdateScore>(UpdateScore);
         SignalManager.Instance.AddObserver<OnArrowsAdded>(UpdateArrows);
         SetScore();

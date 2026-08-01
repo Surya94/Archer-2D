@@ -8,9 +8,9 @@ public class ObjectPoolManager : Singleton<ObjectPoolManager>
 
     public void PrepopulatePool<T>(T prefab, int count) where T : PoolableObject
     {
-        if (prefab.Poolable == null)
+        if (prefab == null || prefab.Poolable == null)
         {
-            Debug.LogError($"Error => Poolable type is not assigned for {prefab.name}");
+            Debug.LogError($"Invalid prefab or poolable type for {prefab?.name}");
             return;
         }
 
@@ -30,9 +30,9 @@ public class ObjectPoolManager : Singleton<ObjectPoolManager>
 
     public T SpawnObject<T>(T prefab, Vector3 position, Quaternion rotation) where T : PoolableObject
     {
-        if (prefab.Poolable == null)
+        if (prefab == null || prefab.Poolable == null)
         {
-            Debug.LogError($"Error => Poolable type is not assigned for {prefab.name}");
+            Debug.LogError($"Invalid prefab or poolable type for {prefab?.name}");
             return null;
         }
 
@@ -42,33 +42,60 @@ public class ObjectPoolManager : Singleton<ObjectPoolManager>
             objectPools[prefab.Poolable] = pool;
         }
 
+        T obj;
+
         if (pool.Count > 0)
         {
-            T obj = (T)pool.Pop();
-            obj.transform.position = position;
-            obj.transform.rotation = rotation;
-            obj.OnObjectSpawn();
-            obj.gameObject.SetActive(true);
-            return obj;
+            obj = (T)pool.Pop();
+        }
+        else
+        {
+            obj = Instantiate(prefab);
         }
 
-        T newObj = Instantiate(prefab, position, rotation);
-        newObj.OnObjectSpawn();
-        return newObj;
+        // Set position and rotation
+        obj.transform.position = position;
+        obj.transform.rotation = rotation;
+
+        // Enable and spawn
+        obj.gameObject.SetActive(true);
+        obj.OnObjectSpawn();
+
+        return obj;
+    }
+
+    public T SpawnObject<T>(T prefab, Vector3 position) where T : PoolableObject
+    {
+        return SpawnObject(prefab, position, Quaternion.identity);
+    }
+
+    public T SpawnObject<T>(T prefab) where T : PoolableObject
+    {
+        return SpawnObject(prefab, Vector3.zero, Quaternion.identity);
     }
 
     public void DespawnObject(PoolableObject obj)
     {
+        if (obj == null || obj.Poolable == null)
+        {
+            Debug.LogError("Cannot despawn null object or object without poolable type");
+            return;
+        }
+
+        // Call despawn callback
         obj.OnObjectDespawn();
+
+        // Simply disable the object
         obj.gameObject.SetActive(false);
 
+        // Return to pool
         if (objectPools.TryGetValue(obj.Poolable, out Stack<PoolableObject> pool))
         {
             pool.Push(obj);
         }
         else
         {
-            Debug.LogError($"Error => Poolable type {obj.Poolable.name} not found in the pool");
+            Debug.LogError($"Pool not found for type {obj.Poolable.name}");
         }
     }
 }

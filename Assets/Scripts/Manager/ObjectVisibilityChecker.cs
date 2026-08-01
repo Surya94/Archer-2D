@@ -15,7 +15,6 @@ public class ObjectVisibilityChecker : MonoBehaviour
         objectRenderer = GetComponent<Renderer>();
         mainCamera = Camera.main;
         frustumPlanes = GeometryUtility.CalculateFrustumPlanes(mainCamera);
-        StartCoroutine(CheckVisibility());
     }
 
     private void OnEnable()
@@ -23,9 +22,9 @@ public class ObjectVisibilityChecker : MonoBehaviour
         canCheckVisiblity = true;
     }
 
-    private IEnumerator CheckVisibility()
+    private void Update()
     {
-        while (canCheckVisiblity)
+        if (canCheckVisiblity)
         {
             bool isVisible = GeometryUtility.TestPlanesAABB(frustumPlanes, objectRenderer.bounds);
             if (!isVisible)
@@ -34,7 +33,7 @@ public class ObjectVisibilityChecker : MonoBehaviour
                 canCheckVisiblity = false;
                 parentArrow.DisableArrow();
             }
-            yield return new WaitForSeconds(0.1f);
+            //yield return new WaitForSeconds(0.1f);
         }
     }
 }

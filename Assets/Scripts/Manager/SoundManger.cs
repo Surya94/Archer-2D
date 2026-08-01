@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -32,5 +33,35 @@ public class SoundManger : Singleton<SoundManger>
     public void PlayHitSound(Vector3 pos = default)
     {
         AudioSource.PlayClipAtPoint(BowSoundManager.hitSound, pos);
+    }
+
+    internal void PlayButtonClickSound(Vector3 pos = default)
+    {
+        AudioSource.PlayClipAtPoint(BowSoundManager.fireSound, pos);
+    }
+
+    internal void PlaySFX(AudioClip gameOverSound)
+    {
+        throw new NotImplementedException();
+    }
+
+    internal void SetSFXEnabled(bool enabled)
+    {
+        throw new NotImplementedException();
+    }
+
+    internal void SetMusicVolume(float volume)
+    {
+        throw new NotImplementedException();
+    }
+
+    internal void SetSFXVolume(float volume)
+    {
+        throw new NotImplementedException();
+    }
+
+    internal void SetMusicEnabled(bool enabled)
+    {
+        throw new NotImplementedException();
     }
 }

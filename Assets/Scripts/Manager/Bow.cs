@@ -30,8 +30,9 @@ public class Bow : MonoBehaviour
     private float waitTimeTimer = 0.5f;
     private ScoreManager scoreManager;
     void Start()
-    {        
-         scoreManager = DependencyResolver.Resolve<ScoreManager>();
+    {
+        scoreManager = DependencyResolver.Resolve<ScoreManager>();
+        scoreManager.ResetGame();
         if (bowData.enableAimAssit)
         {
             points = new GameObject[bowData.numberOfPoints];
@@ -46,33 +47,74 @@ public class Bow : MonoBehaviour
         lineRenderer.SetPosition(0, endPointA.position);
         lineRenderer.SetPosition(1, endPointB.position);
         SoundManger.Instance.Init();
+        SpawnArrow();
+    }
+
+    private void OnEnable()
+    {
+        if (SignalManager.Instance != null)
+            SignalManager.Instance.AddObserver<OnArrowDestoryed>(OnArrowDestory);
+    }
+
+    private void OnDisable()
+    {
+        if (SignalManager.Instance != null)
+            SignalManager.Instance.RemoveObserver<OnArrowDestoryed>(OnArrowDestory);
+    }
+
+    private void OnArrowDestory(OnArrowDestoryed destoryed)
+    {
+        SpawnArrow();
+    }
+
+    private void SpawnArrow()
+    {
+        if (scoreManager.arrowCount >= 1)
+        {
+            SignalManager.Instance.DispatchSignal(new OnAddArrows(-1));
+            waitTimeTimer = bowData.waitTime;
+            var arrow = ObjectPoolManager.Instance.SpawnObject(arroeObj.GetComponent<Arrow>(), drawStartPoint.position, drawStartPoint.rotation);
+            newArrow = arrow.gameObject;
+            newArrow.SetActive(true);
+            newArrow.transform.position = drawStartPoint.position;
+            newArrow.transform.rotation = drawStartPoint.rotation;
+            newArrow.transform.parent = drawStartPoint.parent;
+            arrow.rb.linearVelocity = Vector2.zero;
+            arrow.rb.bodyType = RigidbodyType2D.Kinematic;
+            arrow.isFired = false;
+            ResetBowString();
+        }
+        else
+        {
+            Debug.Log("No Arrows Left");
+        }
     }
 
     void Update()
     {
         Vector2 bowPos = transform.position;
-        if (newArrow == null)
-        {
-            if (waitTimeTimer <= 0 && scoreManager.arrowCount >= 1)
-            {
-                SignalManager.Instance.DispatchSignal(new OnAddArrows(-1));
-                waitTimeTimer = bowData.waitTime;
-                var arrow = ObjectPoolManager.Instance.SpawnObject(arroeObj.GetComponent<Arrow>(), drawStartPoint.position, drawStartPoint.rotation);
-                newArrow=arrow.gameObject;
-                newArrow.SetActive(true);
-                newArrow.transform.position = drawStartPoint.position;
-                newArrow.transform.rotation = drawStartPoint.rotation;
-                newArrow.transform.parent = drawStartPoint.parent;
-                arrow.rb.linearVelocity = Vector2.zero;
-                arrow.rb.isKinematic = true;
-                arrow.isFired = false;
-                ResetBowString();
-            }
-            else
-            {
-                waitTimeTimer -= Time.deltaTime;
-            }
-        }
+        //if (newArrow == null)
+        //{
+        //    if (waitTimeTimer <= 0 && scoreManager.arrowCount >= 1)
+        //    {
+        //        SignalManager.Instance.DispatchSignal(new OnAddArrows(-1));
+        //        waitTimeTimer = bowData.waitTime;
+        //        var arrow = ObjectPoolManager.Instance.SpawnObject(arroeObj.GetComponent<Arrow>(), drawStartPoint.position, drawStartPoint.rotation);
+        //        newArrow=arrow.gameObject;
+        //        newArrow.SetActive(true);
+        //        newArrow.transform.position = drawStartPoint.position;
+        //        newArrow.transform.rotation = drawStartPoint.rotation;
+        //        newArrow.transform.parent = drawStartPoint.parent;
+        //        arrow.rb.linearVelocity = Vector2.zero;
+        //        arrow.rb.bodyType = RigidbodyType2D.Kinematic;
+        //        arrow.isFired = false;
+        //        ResetBowString();
+        //    }
+        //    else
+        //    {
+        //        waitTimeTimer -= Time.deltaTime;
+        //    }
+        //}
 
 
 
@@ -188,7 +230,7 @@ public class Bow : MonoBehaviour
         newArrow.transform.parent = null;
         var arrow = newArrow.GetComponent<Arrow>();
         arrow.SetFireData(launchForce / bowData.MaxForce);
-        arrow.rb.isKinematic = false;
+        arrow.rb.bodyType = RigidbodyType2D.Dynamic;
         arrow.rb.linearVelocity = transform.right * launchForce;
         arrow.isFired = true;
         newArrow = null;

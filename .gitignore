@@ -75,3 +75,7 @@ Logs/AssetImportWorker0.log
 Logs/Packages-Update.log
 Logs/shadercompiler-AssetImportWorker0.log
 Logs/shadercompiler-UnityShaderCompiler.exe0.log
+
+# Third-party asset pack not currently used by the game (More Mountains Feel + Nice Vibrations)
+/[Aa]ssets/Feel/
+/[Aa]ssets/Feel.meta
