@@ -7,5 +7,7 @@ public class SplashScreenHandler : MonoBehaviour
     private void OnEnable()
     {
         
+
+
     }
 }
