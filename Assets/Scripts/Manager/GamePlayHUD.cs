@@ -16,15 +16,21 @@ public class GamePlayHUD : MonoBehaviour
         SignalManager.Instance.AddObserver<OnUpdateScore>(UpdateScore);
         SignalManager.Instance.AddObserver<OnArrowsAdded>(UpdateArrows);
         SetScore();
+        SetArrowCount();
     }
 
     private void UpdateArrows(OnArrowsAdded signalData)
+    {
+        SetArrowCount();
+    }
+
+    private void SetArrowCount()
     {
         if (arrowCount != null)
             arrowCount.text =": "+ scoreManager.arrowCount.ToString();
     }
 
-    void OnDestory()
+    void OnDestroy()
     {
         SignalManager.Instance.RemoveObserver<OnUpdateScore>(UpdateScore);
         SignalManager.Instance.RemoveObserver<OnArrowsAdded>(UpdateArrows);

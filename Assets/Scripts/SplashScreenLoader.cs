@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Archer.Scripts.Manager;
 
 namespace Archer.Scripts
 {
@@ -12,6 +13,7 @@ namespace Archer.Scripts
             Debug.Log("Game Initialized on run time");
             DependencyInjectionManager.Initialize();
             DependencyInjectionManager.InitializeServices();
+            _ = GameManager.Instance;
         }
     }
 

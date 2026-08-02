@@ -86,7 +86,7 @@ public class Bow : MonoBehaviour
         }
         else
         {
-            Debug.Log("No Arrows Left");
+            SignalManager.Instance.DispatchSignal(new OnGameOver());
         }
     }
 
