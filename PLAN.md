@@ -26,7 +26,7 @@ An investigation via Unity MCP (firing arrows, driving signals, reading scenes l
 | 2 — Activate the UI panel layer | 🟨 Partial | GameOver + PauseMenu + HUD + MainMenu + Settings shell + loading screen done; Settings panel not yet placed in GameScene |
 | 3 — SoundManger completion | ⬜ Pending | Implement the 5 `NotImplementedException` stubs |
 | 4 — Settings persistence + Economy foundation | ⬜ Pending | `EconomyManager`: currency, cosmetics, ads-removed, settings |
-| 5 — AppLovin MAX ads integration | ⬜ Pending | Needs AppLovin account/ad units (human step) |
+| 5 — AppLovin MAX ads integration | 🟨 Partial | MAX 8.6.6 imported, `APPLOVIN_MAX` on (Android); bottom-centre banner + rewarded wired, simulated until ad unit ids are set. Interstitial, consent flow, device test pending |
 | 6 — Unity IAP integration | ⬜ Pending | Needs Play Console app/products (human step) |
 | 7 — Shop / cosmetics UI | ⬜ Pending | `ShopPanel`, skin ScriptableObjects, equip logic |
 | 8 — Release/store readiness polish | ⬜ Pending | Icons, manifest, keystore, Play Console checklist |
@@ -119,6 +119,38 @@ Wiring up Restart/Home made runtime scene reloading reachable for the first time
   - Zero errors or exceptions in `Editor.log`.
 - **Unreproduced glitch:** once during testing, after Play from the menu, a game over left `UIManager.isTransitioning` stuck. The HUD fade coroutine advanced one frame and stopped, and the UI stayed on Gameplay while paused. 4 targeted repro attempts (direct start, menu → Play, Restart, with and without screenshots) all transitioned correctly. It may be an artifact of the MCP frame-stepping harness, but that is unconfirmed. If it ever shows up in real play, suspect `UIManager.ExecuteTransition`'s `WaitUntil` on a panel coroutine that stopped.
 - **Noticed, not fixed:** the HUD pause button (top-right) overlaps the "Score" label, which reads "Sco".
+
+### Stage 5 (part 1) — MAX plugin + bottom-centre banner 🟨
+- **Scope change:** a **bottom-centre banner, shown at all times including gameplay**, was added to Stage 5. The original scope listed rewarded + interstitial only. The owner accepted the accidental-tap risk of a gameplay banner, which ad networks treat as invalid traffic. Mitigations:
+  - `Bow` ignores presses that start on the banner, plus 8dp padding (`AdsManager.IsPointOverBanner`).
+  - The banner is a fixed 320×50dp (728×90dp on tablets). Adaptive/full-width banners are disabled.
+- **Plugin:** AppLovin MAX Unity Plugin **8.6.6** (Android SDK 13.6.4), imported from the official GitHub release `.unitypackage`. It brings Google EDM4U 1.2.186.
+  - The Android resolver uses Gradle templates in `Assets/Plugins/Android`: `mainTemplate.gradle` declares `com.applovin:applovin-sdk:13.6.4`, with AndroidX + Jetifier enabled.
+  - No system `JAVA_HOME` is needed: Unity's bundled OpenJDK resolves the dependencies at build time. Import-time "JAVA_HOME is not set" errors came from the resolver's first pass running before the templates existed; a Force Resolve cleared them.
+- **`APPLOVIN_MAX` scripting define:** set for **Android only**. Other build targets, including the Editor on Standalone, compile without MAX.
+- **Code (`Assets/Scripts/Manager/Ads/`):**
+  - `IBannerAdProvider`.
+  - `SimulatedBannerAdProvider`: a grey placeholder on a top-most overlay canvas, parented to the `DontDestroyOnLoad` `AdsManager`.
+  - `MaxBannerAdProvider` (under `#if APPLOVIN_MAX`, using `MaxSdk.AdViewConfiguration(BottomCenter) { IsAdaptive = false }`).
+  - `BannerMetrics`: dp→px conversion. In the Editor the Game view is treated as a phone: 393dp short side.
+  - `MaxSdkBootstrap`: initialises the SDK exactly once. The rewarded provider now waits on it instead of calling `InitializeSdk()` itself.
+  - `AdsConfig.bannerAdUnitId`.
+  - `AdsManager.ShowBanner/HideBanner/SetBannerAllowed/IsPointOverBanner`.
+  - The banner is shown once at boot from `SplashScreenLoader`.
+- **`SetBannerAllowed(false)` has no caller yet.** It is the switch the Stage 6 "Remove Ads" purchase must flip, and the rewarded revive stays available regardless.
+- **Verified in Editor (simulated provider):**
+  - The banner is drawn exactly where the hit test expects.
+  - No HUD / Pause / Game Over button overlaps it.
+  - It survives Restart (one instance).
+  - The rewarded revive still resolves.
+  - The project compiles with `APPLOVIN_MAX` (0 errors), and blank ids fall back to the simulated providers.
+- **Not verified:** a real press on the banner in the Game view; real ad fill; device sizing; the consent dialog.
+- **Still to do in Stage 5:**
+  - SDK key in Integration Manager and the Android banner/rewarded ad unit ids in `AdsConfig` (human).
+  - Mediation adapters.
+  - MAX Terms & Privacy Policy (UMP) consent flow, which needs a hosted privacy-policy URL.
+  - Interstitial placement.
+  - Device test in MAX test mode / Mediation Debugger.
 
 ## Remaining stages (summary)
 

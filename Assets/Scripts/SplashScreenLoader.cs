@@ -15,7 +15,8 @@ namespace Archer.Scripts
             DependencyInjectionManager.Initialize();
             DependencyInjectionManager.InitializeServices();
             _ = GameManager.Instance;
-            _ = AdsManager.Instance;
+            // The banner is shown once here and persists across every scene (menus and play).
+            AdsManager.Instance.ShowBanner();
         }
     }
 

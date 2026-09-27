@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Archer.Scripts.Manager;
+using Archer.Scripts.Manager.Ads;
 
 public class Bow : MonoBehaviour
 {
@@ -150,7 +151,9 @@ public class Bow : MonoBehaviour
         if (GameManager.Instance.IsPaused)
             return;
 
-        if (Input.GetMouseButtonDown(0))
+        // A press that lands on the banner ad must not start a draw: during play, fingers go
+        // everywhere, and taps on the ad from that count as invalid traffic.
+        if (Input.GetMouseButtonDown(0) && !AdsManager.Instance.IsPointOverBanner(Input.mousePosition))
         {
             OnStartDrag();
         }

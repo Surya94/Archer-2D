@@ -33,18 +33,17 @@ namespace Archer.Scripts.Manager.Ads
 
         public void Initialize()
         {
-            MaxSdkCallbacks.OnSdkInitializedEvent += OnSdkInitialized;
-
             MaxSdkCallbacks.Rewarded.OnAdLoadedEvent += OnAdLoaded;
             MaxSdkCallbacks.Rewarded.OnAdLoadFailedEvent += OnAdLoadFailed;
             MaxSdkCallbacks.Rewarded.OnAdDisplayFailedEvent += OnAdDisplayFailed;
             MaxSdkCallbacks.Rewarded.OnAdReceivedRewardEvent += OnAdReceivedReward;
             MaxSdkCallbacks.Rewarded.OnAdHiddenEvent += OnAdHidden;
 
-            MaxSdk.InitializeSdk();
+            // Shared with the banner provider, so the SDK is initialised once.
+            MaxSdkBootstrap.WhenReady(OnSdkInitialized);
         }
 
-        private void OnSdkInitialized(MaxSdkBase.SdkConfiguration configuration)
+        private void OnSdkInitialized()
         {
             sdkInitialized = true;
             Load();

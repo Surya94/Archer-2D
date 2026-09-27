@@ -21,11 +21,18 @@ namespace Archer.Scripts.Manager.Ads
                  "simulated provider is used, so the revive flow stays testable in the Editor.")]
         [SerializeField] private string rewardedAdUnitId = string.Empty;
 
+        [Tooltip("Android banner ad unit id from your AppLovin dashboard. While this is blank " +
+                 "the simulated grey placeholder banner is shown instead.")]
+        [SerializeField] private string bannerAdUnitId = string.Empty;
+
         public string SdkKey => sdkKey;
         public string RewardedAdUnitId => rewardedAdUnitId;
+        public string BannerAdUnitId => bannerAdUnitId;
 
         /// <summary>True when there is a real ad unit to serve from.</summary>
         public bool HasRewardedUnit => !string.IsNullOrWhiteSpace(rewardedAdUnitId);
+
+        public bool HasBannerUnit => !string.IsNullOrWhiteSpace(bannerAdUnitId);
 
         public static AdsConfig Load()
         {

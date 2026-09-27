@@ -1,10 +1,12 @@
 ﻿<Solution>
   <Project Path="MoreMountains.Tools.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="MaxSdk.Scripts.csproj" />
   <Project Path="MoreMountains.Tools.Editor.csproj" />
   <Project Path="Lofelt.NiceVibrations.csproj" />
   <Project Path="Assembly-CSharp-firstpass.csproj" />
   <Project Path="Lofelt.NiceVibrations.Demo.csproj" />
+  <Project Path="MaxSdk.Scripts.IntegrationManager.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Lofelt.NiceVibrations.Editor.csproj" />
 </Solution>
