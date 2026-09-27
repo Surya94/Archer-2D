@@ -259,7 +259,7 @@ namespace Archer.Editor
             TextMeshProUGUI bestText, RectTransform arrowPill, RectTransform arrowIcon,
             TextMeshProUGUI arrowText)
         {
-            GamePlayHUD hud = Object.FindFirstObjectByType<GamePlayHUD>(FindObjectsInactive.Include);
+            GamePlayHUD hud = Object.FindAnyObjectByType<GamePlayHUD>(FindObjectsInactive.Include);
             if (hud == null)
             {
                 Debug.LogError("[HUDBuilder] No GamePlayHUD in GameScene - aborting before save.");
@@ -280,7 +280,7 @@ namespace Archer.Editor
         private static bool WireScoreVfx(GameObject vfxPrefab, RectTransform scorePill)
         {
             ScoreAddingVFXHandler handler =
-                Object.FindFirstObjectByType<ScoreAddingVFXHandler>(FindObjectsInactive.Include);
+                Object.FindAnyObjectByType<ScoreAddingVFXHandler>(FindObjectsInactive.Include);
             if (handler == null)
             {
                 Debug.LogError("[HUDBuilder] No ScoreAddingVFXHandler in GameScene - aborting before save.");

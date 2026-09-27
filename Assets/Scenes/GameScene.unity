@@ -992,6 +992,11 @@ MonoBehaviour:
   maxEnemy: 40
   endPoint: {fileID: 396326147}
   infiniteEnemies: 1
+  bonusBalloons:
+  - {fileID: 7881985549459923337, guid: a8223ac513d5a9c49add6786ec987ac5, type: 3}
+  - {fileID: 3170133668118176593, guid: 670b2fc333c019646bd0cbe18694c5bd, type: 3}
+  - {fileID: 5123223250945596900, guid: 68dbd72c9835ad940bf21d70579a1243, type: 3}
+  bonusIntervalRange: {x: 25, y: 35}
 --- !u!4 &680237625
 Transform:
   m_ObjectHideFlags: 0
@@ -1429,6 +1434,64 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 797455864}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &815292260
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 815292262}
+  - component: {fileID: 815292261}
+  m_Layer: 0
+  m_Name: BonusEffects
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &815292261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 815292260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f24517824b0137442bc96639be12000e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BonusEffectController
+  extraArrows: 5
+  quiverSprite: {fileID: 21300000, guid: 54433fecd6352eb429268c451bffa5be, type: 3}
+  arrowTarget: {fileID: 1408654280}
+  bombSprite: {fileID: 21300000, guid: 1412ecccc569d3943a70aa6b8165660b, type: 3}
+  blastSprite: {fileID: 21300000, guid: 7cb281fb62f40f743a20e696449e21c1, type: 3}
+  blastRippleDelayPerUnit: 0.03
+  boltSprite: {fileID: 21300000, guid: 59190cda99d52714cb82269fb407cbe8, type: 3}
+  maxLightningJumps: 6
+  lightningJumpDelay: 0.1
+  boltColour: {r: 0.75, g: 0.95, b: 1, a: 1}
+  additiveMaterial: {fileID: 2100000, guid: 1f7b9b6b6fe935c41aa55d26fd17bd7a, type: 2}
+  sortingLayer: Enemy
+  sortingOrder: 50
+  itemHeight: 0.8
+--- !u!4 &815292262
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 815292260}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &838436960
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1701,7 +1764,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 114.65, y: 0}
+  m_AnchoredPosition: {x: 114.649994, y: 0}
   m_SizeDelta: {x: -201, y: 0}
   m_Pivot: {x: 0.35, y: 0.5}
 --- !u!114 &1166846538
@@ -3546,3 +3609,4 @@ SceneRoots:
   - {fileID: 1403973492}
   - {fileID: 1311711846}
   - {fileID: 364784138}
+  - {fileID: 815292262}
