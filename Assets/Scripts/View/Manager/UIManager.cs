@@ -12,6 +12,8 @@ namespace Archer.Scripts.View.Manager
     {
         [Header("UI Configuration")]
         [SerializeField] private UITransitionType defaultTransition = UITransitionType.Fade;
+        [Tooltip("State entered once panels are initialized. Set to None to stay put, e.g. in a scene that has no MainMenu panel.")]
+        [SerializeField] private UIState initialState = UIState.MainMenu;
         [SerializeField] private bool allowBackNavigation = true;
         [SerializeField] private bool debugMode = false;
 
@@ -81,8 +83,13 @@ namespace Archer.Scripts.View.Manager
                 panel.Initialize();
             }
 
-            // Set initial state
-            ChangeState(UIState.MainMenu, UITransitionType.Instant, false);
+            // Set initial state. Scene-configurable: GameScene has no MainMenu panel, and
+            // hard-coding MainMenu there logs an error and strands currentState at None,
+            // which in turn leaves stateHistory empty so GoBack() can never leave the pause menu.
+            if (initialState != UIState.None)
+            {
+                ChangeState(initialState, UITransitionType.Instant, false);
+            }
         }
 
         private void AutoRegisterPanels()

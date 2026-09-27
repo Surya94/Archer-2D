@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Archer.Scripts.Manager;
+using Archer.Scripts.Manager.Ads;
 
 namespace Archer.Scripts
 {
@@ -14,6 +15,7 @@ namespace Archer.Scripts
             DependencyInjectionManager.Initialize();
             DependencyInjectionManager.InitializeServices();
             _ = GameManager.Instance;
+            _ = AdsManager.Instance;
         }
     }
 

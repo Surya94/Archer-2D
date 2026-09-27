@@ -40,11 +40,23 @@ public class EnemySpawner : Singleton<EnemySpawner>
 
     private void SpawnEnemy()
     {
+        // Guard the Inspector-assigned data. This component is a scene object whose references
+        // are all scene objects; if a bare instance is ever auto-created by the lazy Singleton
+        // getter it will have none of them, and endPoint in particular was dereferenced
+        // unguarded inside Enemy.GotToTarget.
+        if (spawnPoints == null || spawnPoints.Count == 0) return;
+        if (lstOfEnemies == null || lstOfEnemies.Count == 0) return;
+        if (endPoint == null) return;
+
         var spawnPoint = spawnPoints[UnityEngine.Random.Range(0, spawnPoints.Count)];
 
         if (spawnPoint != null)
         {
-            var spawnedEnemy = ObjectPoolManager.Instance.SpawnObject(lstOfEnemies[Random.Range(0, lstOfEnemies.Count)], spawnPoint.position, spawnPoint.rotation);
+            var enemyPrefab = lstOfEnemies[Random.Range(0, lstOfEnemies.Count)];
+
+            if (enemyPrefab == null) return;
+
+            var spawnedEnemy = ObjectPoolManager.Instance.SpawnObject(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
             if (spawnedEnemy != null)
             {
                 spawnedEnemy.transform.position = spawnPoint.position;

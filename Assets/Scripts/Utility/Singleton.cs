@@ -51,7 +51,18 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
             if (instance == null)
             {
                 instance = this as T;
-                DontDestroyOnLoad(gameObject);
+
+                // Deliberately NOT DontDestroyOnLoad. Reaching this branch means the singleton
+                // was placed in a scene, so its serialized Inspector references point at scene
+                // objects. Persisting it across a scene load would keep it alive holding
+                // destroyed references, and - worse - the duplicate branch below would then
+                // destroy the fresh, correctly-wired instance from the new scene, leaving the
+                // stale one permanently authoritative. That was the cause of the Restart crash.
+                //
+                // The lazily-created path in Instance still calls DontDestroyOnLoad: those
+                // singletons (SignalManager, GameManager, AdsManager, SoundManger,
+                // ObjectPoolManager) own no scene references and MUST persist - ScoreManager
+                // subscribes to SignalManager exactly once at boot and never re-subscribes.
             }
             else if (instance != this)
             {

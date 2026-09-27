@@ -14,7 +14,11 @@ public class VFXHandler : MonoBehaviour
         Init();
     }
 
-    public void OnDestory()
+    // Was "OnDestory" - a misspelling, so Unity never called it and Dinit() never ran. That
+    // left ScoreAddingVFXHandler/ArrowAddingVFXHandler subscribed to the persistent
+    // SignalManager forever; every scene reload added another set of dead subscribers that
+    // fired on each arrow spawn and touched a destroyed Canvas/Text.
+    public void OnDestroy()
     {
         Dinit();
     }

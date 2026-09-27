@@ -25,6 +25,12 @@ namespace Archer.Scripts.View.Abstract
             if (rectTransform == null)
                 rectTransform = GetComponent<RectTransform>();
 
+            // IsVisible must mirror the panel's actual on-screen state from the very first
+            // frame. A panel with hideOnStart == false is already visible, and leaving
+            // IsVisible false would make the first Hide() early-return without invoking its
+            // onComplete callback, deadlocking UIManager.ExecuteTransition's WaitUntil.
+            IsVisible = !hideOnStart;
+
             if (hideOnStart)
             {
                 SetVisibilityImmediate(false);
@@ -68,7 +74,15 @@ namespace Archer.Scripts.View.Abstract
 
         public virtual void Show(UITransitionType transition = UITransitionType.Instant, Action onComplete = null)
         {
-            if (IsVisible) return;
+            // Already in the requested state: nothing to animate, but the callback MUST still
+            // fire. UIManager.ExecuteTransition blocks on `yield return new WaitUntil(...)`
+            // for this callback, so swallowing it wedges isTransitioning at true forever and
+            // kills all further UI navigation.
+            if (IsVisible)
+            {
+                onComplete?.Invoke();
+                return;
+            }
 
             gameObject.SetActive(true);
             IsVisible = true;
@@ -94,7 +108,12 @@ namespace Archer.Scripts.View.Abstract
 
         public virtual void Hide(UITransitionType transition = UITransitionType.Instant, Action onComplete = null)
         {
-            if (!IsVisible) return;
+            // See Show(): the callback must fire even when there is nothing to hide.
+            if (!IsVisible)
+            {
+                onComplete?.Invoke();
+                return;
+            }
 
             IsVisible = false;
 

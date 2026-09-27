@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Archer.Scripts.Manager;
 
 public class Bow : MonoBehaviour
 {
@@ -53,16 +54,29 @@ public class Bow : MonoBehaviour
     private void OnEnable()
     {
         if (SignalManager.Instance != null)
+        {
             SignalManager.Instance.AddObserver<OnArrowDestoryed>(OnArrowDestory);
+            SignalManager.Instance.AddObserver<OnRunContinued>(OnRunContinue);
+        }
     }
 
     private void OnDisable()
     {
         if (SignalManager.Instance != null)
+        {
             SignalManager.Instance.RemoveObserver<OnArrowDestoryed>(OnArrowDestory);
+            SignalManager.Instance.RemoveObserver<OnRunContinued>(OnRunContinue);
+        }
     }
 
     private void OnArrowDestory(OnArrowDestoryed destoryed)
+    {
+        SpawnArrow();
+    }
+
+    // The run ended (no arrows left) and was revived. Update() early-returns while
+    // newArrow is null, so the bow stays inert until an arrow is nocked again from here.
+    private void OnRunContinue(OnRunContinued continued)
     {
         SpawnArrow();
     }
@@ -74,6 +88,16 @@ public class Bow : MonoBehaviour
             SignalManager.Instance.DispatchSignal(new OnAddArrows(-1));
             waitTimeTimer = bowData.waitTime;
             var arrow = ObjectPoolManager.Instance.SpawnObject(arroeObj.GetComponent<Arrow>(), drawStartPoint.position, drawStartPoint.rotation);
+
+            // SpawnObject returns null when the prefab or its poolable type is invalid. The
+            // result is dereferenced five times below, and this runs from Start(), so an
+            // unguarded null here aborts Start() and leaves the bow dead for the whole run.
+            if (arrow == null)
+            {
+                Debug.LogError("[Bow] Failed to spawn an arrow from the pool; the bow has no nocked arrow.");
+                return;
+            }
+
             newArrow = arrow.gameObject;
             newArrow.SetActive(true);
             newArrow.transform.position = drawStartPoint.position;
@@ -119,6 +143,11 @@ public class Bow : MonoBehaviour
 
 
         if (newArrow == null)
+            return;
+
+        // Input is read raw, not through the UI, so the pause/game-over dimmer and the loading
+        // overlay don't block it - a tap on RESUME or during a scene load would draw the bow.
+        if (GameManager.Instance.IsPaused)
             return;
 
         if (Input.GetMouseButtonDown(0))

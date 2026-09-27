@@ -12,7 +12,10 @@ public class ArrowAddingVFXHandler : VFXHandler
 
     public override void Dinit()
     {
-        SignalManager.Instance.RemoveObserver<OnAddArrows>(OnAddArrows);
+        // Null-conditional: Singleton.Instance returns null once applicationIsQuitting
+        // is set, and Dinit now genuinely runs on destroy (the base class callback used
+        // to be misspelled OnDestory and never fired).
+        SignalManager.Instance?.RemoveObserver<OnAddArrows>(OnAddArrows);
         base.Dinit();
     }
 
