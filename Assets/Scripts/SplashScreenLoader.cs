@@ -15,8 +15,9 @@ namespace Archer.Scripts
             DependencyInjectionManager.Initialize();
             DependencyInjectionManager.InitializeServices();
             _ = GameManager.Instance;
-            // The banner is shown once here and persists across every scene (menus and play).
-            AdsManager.Instance.ShowBanner();
+            // Start the ad SDK and the first rewarded load now, so a revive ad has had the
+            // whole first run to load by the time Game Over asks for it.
+            AdsManager.Instance.Preload();
         }
     }
 

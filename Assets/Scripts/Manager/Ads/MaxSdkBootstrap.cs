@@ -5,9 +5,9 @@ namespace Archer.Scripts.Manager.Ads
 {
 #if APPLOVIN_MAX
     /// <summary>
-    /// Starts the AppLovin SDK exactly once, however many ad formats need it. Each MAX provider
-    /// used to call MaxSdk.InitializeSdk() itself; with a banner and a rewarded provider that
-    /// would initialise twice. Providers call WhenReady instead.
+    /// Starts the AppLovin SDK exactly once, however many ad formats need it. A provider that
+    /// called MaxSdk.InitializeSdk() itself would initialise twice as soon as a second format
+    /// (e.g. interstitial) is added. Providers call WhenReady instead.
     /// </summary>
     public static class MaxSdkBootstrap
     {

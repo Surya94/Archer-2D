@@ -26,7 +26,7 @@ An investigation via Unity MCP (firing arrows, driving signals, reading scenes l
 | 2 — Activate the UI panel layer | 🟨 Partial | GameOver + PauseMenu + HUD + MainMenu + Settings shell + loading screen done; Settings panel not yet placed in GameScene |
 | 3 — SoundManger completion | ⬜ Pending | Implement the 5 `NotImplementedException` stubs |
 | 4 — Settings persistence + Economy foundation | ⬜ Pending | `EconomyManager`: currency, cosmetics, ads-removed, settings |
-| 5 — AppLovin MAX ads integration | 🟨 Partial | MAX 8.6.6 imported, `APPLOVIN_MAX` on (Android); bottom-centre banner + rewarded wired, simulated until ad unit ids are set. Interstitial, consent flow, device test pending |
+| 5 — AppLovin MAX ads integration | 🟨 Partial | MAX 8.6.6 imported, `APPLOVIN_MAX` on (Android); rewarded wired, simulated until ad unit id is set. Banner was added then **removed** (2026-09-28). Interstitial, consent flow, device test pending |
 | 6 — Unity IAP integration | ⬜ Pending | Needs Play Console app/products (human step) |
 | 7 — Shop / cosmetics UI | ⬜ Pending | `ShopPanel`, skin ScriptableObjects, equip logic |
 | 8 — Release/store readiness polish | ⬜ Pending | Icons, manifest, keystore, Play Console checklist |
@@ -121,6 +121,7 @@ Wiring up Restart/Home made runtime scene reloading reachable for the first time
 - **Noticed, not fixed:** the HUD pause button (top-right) overlaps the "Score" label, which reads "Sco".
 
 ### Stage 5 (part 1) — MAX plugin + bottom-centre banner 🟨
+- **Superseded 2026-09-28: the banner was removed at the owner's request.** All banner code (`IBannerAdProvider`, `Simulated/MaxBannerAdProvider`, `BannerMetrics`, `AdsConfig.bannerAdUnitId`, the `AdsManager` banner API and `Bow`'s banner tap guard) was deleted; rewarded is unchanged. `SplashScreenLoader` now calls `AdsManager.Preload()` so the SDK and first rewarded load still start at boot. **Consequence for Stage 6:** "Remove Ads" has nothing to switch off until interstitials (or another non-rewarded format) exist — revisit that product before creating it in Play Console. The notes below are kept as history.
 - **Scope change:** a **bottom-centre banner, shown at all times including gameplay**, was added to Stage 5. The original scope listed rewarded + interstitial only. The owner accepted the accidental-tap risk of a gameplay banner, which ad networks treat as invalid traffic. Mitigations:
   - `Bow` ignores presses that start on the banner, plus 8dp padding (`AdsManager.IsPointOverBanner`).
   - The banner is a fixed 320×50dp (728×90dp on tablets). Adaptive/full-width banners are disabled.
@@ -137,7 +138,7 @@ Wiring up Restart/Home made runtime scene reloading reachable for the first time
   - `AdsConfig.bannerAdUnitId`.
   - `AdsManager.ShowBanner/HideBanner/SetBannerAllowed/IsPointOverBanner`.
   - The banner is shown once at boot from `SplashScreenLoader`.
-- **`SetBannerAllowed(false)` has no caller yet.** It is the switch the Stage 6 "Remove Ads" purchase must flip, and the rewarded revive stays available regardless.
+- ~~**`SetBannerAllowed(false)` has no caller yet.**~~ (banner removed - see top of this section.)
 - **Verified in Editor (simulated provider):**
   - The banner is drawn exactly where the hit test expects.
   - No HUD / Pause / Game Over button overlaps it.
@@ -146,7 +147,7 @@ Wiring up Restart/Home made runtime scene reloading reachable for the first time
   - The project compiles with `APPLOVIN_MAX` (0 errors), and blank ids fall back to the simulated providers.
 - **Not verified:** a real press on the banner in the Game view; real ad fill; device sizing; the consent dialog.
 - **Still to do in Stage 5:**
-  - SDK key in Integration Manager and the Android banner/rewarded ad unit ids in `AdsConfig` (human).
+  - SDK key in Integration Manager and the Android rewarded ad unit id in `AdsConfig` (human).
   - Mediation adapters.
   - MAX Terms & Privacy Policy (UMP) consent flow, which needs a hosted privacy-policy URL.
   - Interstitial placement.
