@@ -58,6 +58,24 @@ public class BonusBalloon : Enemy
         }
     }
 
+    public override void SetFrozen(bool frozen, Color iceColour)
+    {
+        if (!IsAlive || frozen == IsFrozen) return;
+        base.SetFrozen(frozen, iceColour);
+
+        // The sway and halo pulse are on other transforms, so the base DOPause misses them.
+        if (frozen)
+        {
+            sway?.Pause();
+            glowPulse?.Pause();
+        }
+        else
+        {
+            sway?.Play();
+            glowPulse?.Play();
+        }
+    }
+
     protected override void OnBurst()
     {
         Vector3 itemPosition = payload != null ? payload.position : transform.position;

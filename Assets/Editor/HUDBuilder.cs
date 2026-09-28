@@ -197,7 +197,7 @@ namespace Archer.Editor
             return pill;
         }
 
-        private static RectTransform CreatePill(string name, RectTransform parent, float width)
+        internal static RectTransform CreatePill(string name, RectTransform parent, float width)
         {
             RectTransform pill = UIStyle.CreateRect(name, parent);
             pill.sizeDelta = new Vector2(width, PillHeight);

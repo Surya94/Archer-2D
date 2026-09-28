@@ -21,9 +21,16 @@ public class Enemy : PoolableObject
     public static readonly List<Enemy> Alive = new List<Enemy>();
 
     public bool IsAlive => !isBurst && gameObject.activeInHierarchy;
+    public bool IsFrozen => isFrozen;
 
     private bool isBurst;
+    private bool isFrozen;
     private Collider2D hitCollider;
+    private SpriteRenderer body;
+    private SpriteRenderer iceShell;
+    private Tween thawWobble;
+
+    private const float IceShellAlpha = 0.55f;
 
     void Start()
     {
@@ -37,6 +44,7 @@ public class Enemy : PoolableObject
         base.OnObjectSpawn();
         curHealth = maxHealth;
         isBurst = false;
+        ClearFreeze();
 
         if (hitCollider == null)
             hitCollider = GetComponent<Collider2D>();
@@ -77,6 +85,8 @@ public class Enemy : PoolableObject
         if (hitCollider != null)
             hitCollider.enabled = false;
 
+        // A frozen balloon's animator is stopped - restart it so the pop actually plays.
+        ClearFreeze();
         transform.DOKill();
         animator.SetTrigger("Burst");
         SignalManager.Instance.DispatchSignal(
@@ -92,6 +102,102 @@ public class Enemy : PoolableObject
     /// <summary>Hook for subclasses that do something extra when popped.</summary>
     protected virtual void OnBurst()
     {
+    }
+
+    /// <summary>
+    /// Time bonus freeze. Pauses this balloon's rise (the DOMove) and its idle animation and
+    /// ices it over; it can still be shot. Only the balloon stops - Time.timeScale is untouched,
+    /// so the bow and arrows keep full speed.
+    /// </summary>
+    public virtual void SetFrozen(bool frozen, Color iceColour)
+    {
+        if (isBurst || frozen == isFrozen) return;
+        isFrozen = frozen;
+
+        if (body == null) body = GetComponent<SpriteRenderer>();
+
+        if (frozen)
+        {
+            transform.DOPause();
+            if (animator != null) animator.speed = 0f;
+            if (body != null)
+            {
+                // A tint alone can only darken (red went maroon), so the body gets a light cool
+                // tint and a pale copy of its own sprite on top frosts it over.
+                body.DOKill();
+                body.DOColor(Color.Lerp(Color.white, iceColour, 0.5f), 0.25f).SetLink(gameObject);
+
+                SpriteRenderer shell = GetIceShell();
+                shell.sprite = body.sprite;
+                shell.flipX = body.flipX;
+                shell.DOKill();
+                shell.gameObject.SetActive(true);
+                Color c = Color.Lerp(Color.white, iceColour, 0.35f);
+                c.a = 0f;
+                shell.color = c;
+                shell.DOFade(IceShellAlpha, 0.25f).SetLink(gameObject);
+            }
+            return;
+        }
+
+        if (animator != null) animator.speed = 1f;
+        if (body != null)
+        {
+            body.DOKill();
+            body.DOColor(Color.white, 0.3f).SetLink(gameObject);
+        }
+        if (iceShell != null)
+        {
+            SpriteRenderer shell = iceShell;
+            shell.DOKill();
+            shell.DOFade(0f, 0.25f).SetLink(gameObject)
+                .OnComplete(() => shell.gameObject.SetActive(false));
+        }
+
+        // Thaw: a short shiver, then carry on rising. Rotation, not position, so it can't fight
+        // the paused DOMove that is about to resume.
+        thawWobble?.Kill(true);
+        thawWobble = transform.DOPunchRotation(new Vector3(0f, 0f, 12f), 0.3f, 12, 0.6f)
+            .SetLink(gameObject)
+            .OnComplete(() => transform.DOPlay());
+    }
+
+    /// <summary>
+    /// Drop any freeze state instantly - for pooling and for popping a frozen balloon. Callers
+    /// kill the transform's tweens right after, so this must run first: completing the wobble
+    /// (Kill(true)) snaps the rotation back, where a plain DOKill would leave it mid-tilt.
+    /// </summary>
+    private void ClearFreeze()
+    {
+        thawWobble?.Kill(true);
+        thawWobble = null;
+        isFrozen = false;
+        if (animator != null) animator.speed = 1f;
+        if (body == null) body = GetComponent<SpriteRenderer>();
+        if (body != null)
+        {
+            body.DOKill();
+            body.color = Color.white;
+        }
+        if (iceShell != null)
+        {
+            iceShell.DOKill();
+            iceShell.gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>The frost coat drawn over a frozen balloon; created the first time it's needed.</summary>
+    private SpriteRenderer GetIceShell()
+    {
+        if (iceShell != null) return iceShell;
+
+        GameObject go = new GameObject("IceShell");
+        go.transform.SetParent(transform, false);
+        iceShell = go.AddComponent<SpriteRenderer>();
+        iceShell.sortingLayerID = body.sortingLayerID;
+        iceShell.sortingOrder = body.sortingOrder + 1;
+        go.SetActive(false);
+        return iceShell;
     }
 
     /// <summary>
@@ -127,6 +233,7 @@ public class Enemy : PoolableObject
     {
         base.OnObjectDespawn();
         Alive.Remove(this);
+        ClearFreeze();
         transform.DOKill();
     }
 

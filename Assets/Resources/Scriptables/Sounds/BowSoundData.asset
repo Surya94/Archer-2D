@@ -15,3 +15,5 @@ MonoBehaviour:
   fireSound: {fileID: 8300000, guid: 6f9c2888ac220834697181bfc7a0147f, type: 3}
   loadSound: {fileID: 8300000, guid: 166f6b8519945fa4582c9af4144e1aa6, type: 3}
   hitSound: {fileID: 8300000, guid: 047022a17434f674592c17ebe4853c89, type: 3}
+  freezeSound: {fileID: 8300000, guid: 1405c4368e15c074880f5f6ceef9f532, type: 3}
+  thawSound: {fileID: 8300000, guid: 1ce651611a380934eab663743bf5915f, type: 3}

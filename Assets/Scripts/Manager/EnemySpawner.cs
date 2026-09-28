@@ -21,6 +21,7 @@ public class EnemySpawner : Singleton<EnemySpawner>
     private BonusBalloon activeBonus;
     private BonusBalloon lastBonusPrefab;
     private float spawnIntervalTimer;
+    private bool isFrozen;
     //private Queue<GameObject> enemyPool;
 
     // Start is called before the first frame update
@@ -29,11 +30,26 @@ public class EnemySpawner : Singleton<EnemySpawner>
         spawnIntervalTimer = 0;
         //enemyPool = new Queue<GameObject>();
         RollBonusTimer();
+        SignalManager.Instance.AddObserver<OnFreezeStarted>(HandleFreezeStarted);
+        SignalManager.Instance.AddObserver<OnFreezeEnded>(HandleFreezeEnded);
     }
+
+    protected override void OnDestroy()
+    {
+        SignalManager.Instance?.RemoveObserver<OnFreezeStarted>(HandleFreezeStarted);
+        SignalManager.Instance?.RemoveObserver<OnFreezeEnded>(HandleFreezeEnded);
+        base.OnDestroy();
+    }
+
+    private void HandleFreezeStarted(OnFreezeStarted signalData) => isFrozen = true;
+    private void HandleFreezeEnded(OnFreezeEnded signalData) => isFrozen = false;
 
     // Update is called once per frame
     void Update()
     {
+        // Time bonus: nothing new spawns, and both timers hold where they are.
+        if (isFrozen) return;
+
         UpdateBonus();
 
         if (!infiniteEnemies && (maxEnemy != 0 && enemyCnt > maxEnemy))

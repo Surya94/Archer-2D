@@ -1,6 +1,6 @@
 public enum BonusType
 {
     ExtraArrows,
-    Bomb,
+    TimeFreeze,
     Lightning
 }

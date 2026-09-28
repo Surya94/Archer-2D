@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 namespace Archer.Scripts.Manager
@@ -32,12 +33,22 @@ namespace Archer.Scripts.Manager
         [SerializeField] private float bobAmplitude = 0.08f;
         [SerializeField] private Vector2 bobFrequencyRange = new Vector2(0.05f, 0.12f);
 
+        [Header("Time bonus freeze")]
+        [SerializeField] private Color frozenTint = new Color(0.72f, 0.9f, 1f, 1f);
+        [SerializeField] private float freezeTintDuration = 0.35f;
+
         private readonly List<CloudDrifter> clouds = new List<CloudDrifter>();
+        // Each cloud's depth tint, so a thaw returns it to exactly what it was.
+        private readonly Dictionary<CloudDrifter, Color> depthTints = new Dictionary<CloudDrifter, Color>();
         private Camera mainCamera;
+        private bool isFrozen;
 
         private void Start()
         {
             mainCamera = Camera.main;
+            SignalManager.Instance.AddObserver<OnFreezeStarted>(HandleFreezeStarted);
+            SignalManager.Instance.AddObserver<OnFreezeEnded>(HandleFreezeEnded);
+
             if (cloudPrefab == null || mainCamera == null || cloudSprites == null || cloudSprites.Length == 0)
             {
                 Debug.LogWarning("[CloudField] Missing prefab, camera or sprites - no clouds spawned.");
@@ -67,10 +78,39 @@ namespace Archer.Scripts.Manager
 
         private void OnDestroy()
         {
+            SignalManager.Instance?.RemoveObserver<OnFreezeStarted>(HandleFreezeStarted);
+            SignalManager.Instance?.RemoveObserver<OnFreezeEnded>(HandleFreezeEnded);
+
             foreach (CloudDrifter cloud in clouds)
             {
                 if (cloud != null) cloud.Wrapped -= OnCloudWrapped;
             }
+        }
+
+        private void HandleFreezeStarted(OnFreezeStarted signalData) => SetFrozen(true);
+        private void HandleFreezeEnded(OnFreezeEnded signalData) => SetFrozen(false);
+
+        private void SetFrozen(bool frozen)
+        {
+            isFrozen = frozen;
+            foreach (CloudDrifter cloud in clouds)
+            {
+                if (cloud == null) continue;
+
+                cloud.SetFrozen(frozen);
+                SpriteRenderer sr = cloud.SpriteRenderer;
+                if (!depthTints.TryGetValue(cloud, out Color tint)) tint = sr.color;
+                sr.DOKill();
+                sr.DOColor(frozen ? FrozenColour(tint) : tint, freezeTintDuration).SetLink(cloud.gameObject);
+            }
+        }
+
+        /// <summary>Icy version of a depth tint, keeping its alpha so far clouds stay faint.</summary>
+        private Color FrozenColour(Color tint)
+        {
+            Color c = Color.Lerp(tint, frozenTint, 0.75f);
+            c.a = tint.a;
+            return c;
         }
 
         private void OnCloudWrapped(CloudDrifter cloud)
@@ -99,7 +139,9 @@ namespace Archer.Scripts.Manager
 
             Color tint = Color.Lerp(hazeColour, Color.white, Mathf.Lerp(1f - maxHaze, 1f, depth));
             tint.a = Mathf.Lerp(alphaRange.x, alphaRange.y, depth);
-            sr.color = tint;
+            depthTints[cloud] = tint;
+            sr.DOKill();
+            sr.color = isFrozen ? FrozenColour(tint) : tint;
 
             float scale = Mathf.Lerp(scaleRange.x, scaleRange.y, depth) * Random.Range(0.9f, 1.1f);
             cloud.transform.localScale = new Vector3(scale, scale, 1f);

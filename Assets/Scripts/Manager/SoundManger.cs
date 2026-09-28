@@ -34,6 +34,21 @@ public class SoundManger : Singleton<SoundManger>
     {
         AudioSource.PlayClipAtPoint(BowSoundManager.hitSound, pos);
     }
+    public void PlayFreezeSound(Vector3 pos = default)
+    {
+        PlayIfAssigned(BowSoundManager.freezeSound, pos);
+    }
+    public void PlayThawSound(Vector3 pos = default)
+    {
+        PlayIfAssigned(BowSoundManager.thawSound, pos);
+    }
+
+    // PlayClipAtPoint throws on a null clip; the freeze clips are optional placeholders.
+    private static void PlayIfAssigned(AudioClip clip, Vector3 pos)
+    {
+        if (clip != null)
+            AudioSource.PlayClipAtPoint(clip, pos);
+    }
 
     internal void PlayButtonClickSound(Vector3 pos = default)
     {

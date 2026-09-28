@@ -26,6 +26,8 @@ public class CloudDrifter : MonoBehaviour
     private bool isConfigured;
     private float baseY;
     private float bobPhase;
+    private float bobTime;
+    private bool isFrozen;
 
     public SpriteRenderer SpriteRenderer => spriteRenderer;
 
@@ -60,12 +62,24 @@ public class CloudDrifter : MonoBehaviour
         transform.position = new Vector3(transform.position.x, y, transform.position.z);
     }
 
+    /// <summary>Time bonus freeze: stops drift and bob in place.</summary>
+    public void SetFrozen(bool frozen)
+    {
+        isFrozen = frozen;
+    }
+
     void Update()
     {
+        if (isFrozen) return;
+
+        // Own bob clock rather than Time.time, so a freeze doesn't make the cloud jump when it
+        // resumes.
+        bobTime += Time.deltaTime;
+
         float x = transform.position.x + driftDirection * speed * Time.deltaTime;
         float y = baseY;
         if (bobAmplitude > 0f)
-            y += Mathf.Sin(Time.time * bobFrequency * Mathf.PI * 2f + bobPhase) * bobAmplitude;
+            y += Mathf.Sin(bobTime * bobFrequency * Mathf.PI * 2f + bobPhase) * bobAmplitude;
 
         transform.position = new Vector3(x, y, transform.position.z);
 

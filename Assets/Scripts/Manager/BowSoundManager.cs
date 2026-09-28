@@ -8,5 +8,7 @@ public class BowSoundManager : ScriptableObject
     public AudioClip fireSound;
     public AudioClip loadSound;
     public AudioClip hitSound;
+    public AudioClip freezeSound;
+    public AudioClip thawSound;
 
 }

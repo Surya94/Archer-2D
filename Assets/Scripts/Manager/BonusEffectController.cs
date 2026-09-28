@@ -6,7 +6,8 @@ using UnityEngine;
 /// <summary>
 /// Runs the bonus balloon effects in response to OnBonusCollected. Every balloon an effect pops
 /// goes through Enemy.Burst(), so it pays its normal points and plays its normal pop; the arrow
-/// streak is untouched because only Arrow reports streaks.
+/// streak is untouched because only Arrow reports streaks. The Time bonus pops nothing: it
+/// freezes the balloons (and, via OnFreezeStarted/Ended, the spawner, clouds and HUD overlay).
 ///
 /// All timing is on scaled time (DOTween defaults, WaitForSeconds), so effects freeze with the
 /// rest of the game when GameManager pauses.
@@ -19,10 +20,12 @@ public class BonusEffectController : MonoBehaviour
     [Tooltip("HUD arrow pill the quiver flies into.")]
     public RectTransform arrowTarget;
 
-    [Header("Bomb")]
-    public Sprite bombSprite;
-    public Sprite blastSprite;
-    public float blastRippleDelayPerUnit = 0.03f;
+    [Header("Time Freeze")]
+    public float freezeDuration = 5f;
+    public Sprite clockSprite;
+    [Tooltip("Soft round sprite for the thaw sparkles (the bonus glow works).")]
+    public Sprite sparkleSprite;
+    public Color iceColour = new Color(0.62f, 0.86f, 1f, 1f);
 
     [Header("Lightning")]
     public Sprite boltSprite;
@@ -31,14 +34,16 @@ public class BonusEffectController : MonoBehaviour
     public Color boltColour = new Color(0.75f, 0.95f, 1f, 1f);
 
     [Header("Rendering")]
-    [Tooltip("Additive material for the blast and bolts (textures on black need additive blending).")]
+    [Tooltip("Additive material for the bolts and thaw sparkles.")]
     public Material additiveMaterial;
     public string sortingLayer = "Enemy";
     public int sortingOrder = 50;
-    [Tooltip("World-space height of the quiver/bomb/bolt effect sprites. Sprites differ in pixel size, so each is scaled to this.")]
+    [Tooltip("World-space height of the quiver/clock/bolt effect sprites. Sprites differ in pixel size, so each is scaled to this.")]
     public float itemHeight = 0.8f;
 
     private Camera cam;
+    private Coroutine freezeRoutine;
+    private float freezeRemaining;
 
     void Start()
     {
@@ -60,8 +65,8 @@ public class BonusEffectController : MonoBehaviour
             case BonusType.ExtraArrows:
                 CollectArrows(signalData.position);
                 break;
-            case BonusType.Bomb:
-                DetonateBomb(signalData.position);
+            case BonusType.TimeFreeze:
+                FreezeTime(signalData.position);
                 break;
             case BonusType.Lightning:
                 StartCoroutine(ChainLightning(signalData.position));
@@ -108,81 +113,110 @@ public class BonusEffectController : MonoBehaviour
         return cam.ScreenToWorldPoint(new Vector3(screen.x, screen.y, z - cam.transform.position.z));
     }
 
-    // ------------------------------------------------------------------ Bomb
+    // ------------------------------------------------------------------ Time Freeze
 
-    private void DetonateBomb(Vector3 position)
+    private void FreezeTime(Vector3 position)
     {
-        SpriteRenderer bomb = CreateSprite("BombFX", bombSprite, position, itemHeight);
-        Transform t = bomb.transform;
+        ShowClock(position);
+
+        // Only one bonus is alive at a time, so a second freeze shouldn't happen - but if it
+        // ever does, extend the running one rather than stacking two.
+        if (freezeRoutine != null)
+        {
+            freezeRemaining = freezeDuration;
+            FreezeAlive();
+            return;
+        }
+
+        freezeRoutine = StartCoroutine(FreezeRoutine());
+    }
+
+    private IEnumerator FreezeRoutine()
+    {
+        if (SoundManger.Instance != null)
+            SoundManger.Instance.PlayFreezeSound();
+
+        FreezeAlive();
+        SignalManager.Instance.DispatchSignal(new OnFreezeStarted { duration = freezeDuration });
+
+        // Scaled time, so the countdown holds while the game is paused or on Game Over.
+        freezeRemaining = freezeDuration;
+        while (freezeRemaining > 0f)
+        {
+            yield return null;
+            freezeRemaining -= Time.deltaTime;
+        }
+
+        Thaw();
+        freezeRoutine = null;
+        SignalManager.Instance.DispatchSignal(new OnFreezeEnded());
+    }
+
+    private void FreezeAlive()
+    {
+        // Snapshot: freezing doesn't change the list, but an arrow landing on the same frame can.
+        foreach (Enemy enemy in new List<Enemy>(Enemy.Alive))
+        {
+            if (enemy != null && enemy.IsAlive)
+                enemy.SetFrozen(true, iceColour);
+        }
+    }
+
+    private void Thaw()
+    {
+        if (SoundManger.Instance != null)
+            SoundManger.Instance.PlayThawSound();
+
+        foreach (Enemy enemy in new List<Enemy>(Enemy.Alive))
+        {
+            if (enemy == null || !enemy.IsAlive || !enemy.IsFrozen) continue;
+
+            enemy.SetFrozen(false, iceColour);
+            if (enemy.IsOnScreen(cam, 0f))
+                Sparkle(enemy.transform.position);
+        }
+    }
+
+    /// <summary>The carried stopwatch pops up, spins a quarter turn and fades.</summary>
+    private void ShowClock(Vector3 position)
+    {
+        SpriteRenderer clock = CreateSprite("ClockFX", clockSprite, position, itemHeight);
+        Transform t = clock.transform;
         float s = t.localScale.x;
 
-        // A short drop with a jittery, reddening fuse, then the blast.
         DOTween.Sequence()
-            .Append(t.DOMoveY(position.y - 0.5f, 0.35f).SetEase(Ease.InQuad))
-            .Join(t.DOShakeRotation(0.35f, new Vector3(0f, 0f, 25f), 20))
-            .Join(bomb.DOColor(new Color(1f, 0.55f, 0.5f), 0.35f))
-            .Join(t.DOScale(s * 1.25f, 0.35f))
-            .SetLink(bomb.gameObject)
-            .OnComplete(() =>
-            {
-                Vector3 blastAt = t.position;
-                Destroy(bomb.gameObject);
-                Explode(blastAt);
-            });
+            .Append(t.DOScale(s * 1.6f, 0.25f).SetEase(Ease.OutBack))
+            .Join(t.DOMoveY(position.y + 0.4f, 0.25f).SetEase(Ease.OutQuad))
+            .Append(t.DORotate(new Vector3(0f, 0f, -90f), 0.35f).SetEase(Ease.InOutQuad))
+            .Join(clock.DOColor(iceColour, 0.35f))
+            .Append(clock.DOFade(0f, 0.3f))
+            .Join(t.DOScale(s * 2.2f, 0.3f))
+            .SetLink(clock.gameObject)
+            .OnComplete(() => Destroy(clock.gameObject));
     }
 
-    private void Explode(Vector3 position)
+    /// <summary>A few icy glints bursting off a thawing balloon.</summary>
+    private void Sparkle(Vector3 position)
     {
-        SpriteRenderer blast = CreateSprite("BlastFX", blastSprite, position, 1f);
-        float blastScale = blast.transform.localScale.x;
-        if (additiveMaterial != null) blast.sharedMaterial = additiveMaterial;
-        blast.color = new Color(1f, 0.8f, 0.45f, 1f);
-
-        DOTween.Sequence()
-            .Append(blast.transform.DOScale(blastScale * 7f, 0.45f).SetEase(Ease.OutCubic))
-            .Join(blast.DOFade(0f, 0.45f).SetEase(Ease.InQuad))
-            .SetLink(blast.gameObject)
-            .OnComplete(() => Destroy(blast.gameObject));
-
-        ShakeCamera(0.35f, 0.35f);
-        PlayPop();
-
-        // Snapshot first: Burst() removes from Enemy.Alive, and a popped bonus balloon can start
-        // its own effect (a chain reaction) that also reads the list.
-        List<Enemy> targets = new List<Enemy>();
-        foreach (Enemy enemy in Enemy.Alive)
+        const int count = 5;
+        for (int i = 0; i < count; i++)
         {
-            if (enemy != null && enemy.IsAlive && enemy.IsOnScreen(cam))
-                targets.Add(enemy);
+            SpriteRenderer spark = CreateSprite("ThawSparkle", sparkleSprite, position, 0.22f);
+            if (additiveMaterial != null) spark.sharedMaterial = additiveMaterial;
+            spark.color = Color.Lerp(iceColour, Color.white, 0.5f);
+
+            float angle = (i / (float)count + Random.Range(-0.08f, 0.08f)) * Mathf.PI * 2f;
+            Vector3 to = position + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * Random.Range(0.45f, 0.7f);
+
+            Transform t = spark.transform;
+            float s = t.localScale.x;
+            DOTween.Sequence()
+                .Append(t.DOMove(to, 0.4f).SetEase(Ease.OutCubic))
+                .Join(t.DOScale(s * 0.2f, 0.4f).SetEase(Ease.InQuad))
+                .Join(spark.DOFade(0f, 0.4f).SetEase(Ease.InQuad))
+                .SetLink(spark.gameObject)
+                .OnComplete(() => Destroy(spark.gameObject));
         }
-
-        // Ripple outward from the blast rather than popping everything on the same frame.
-        foreach (Enemy enemy in targets)
-        {
-            Enemy target = enemy;
-            float delay = Vector2.Distance(position, target.transform.position) * blastRippleDelayPerUnit;
-            DOVirtual.DelayedCall(delay, () =>
-            {
-                if (target != null && target.IsAlive)
-                    target.Burst();
-            }, false).SetLink(gameObject);
-        }
-    }
-
-    private void ShakeCamera(float duration, float strength)
-    {
-        if (cam == null) return;
-
-        Transform camTransform = cam.transform;
-        // Complete any running shake first (its OnComplete restores the rest position), then
-        // read the rest position - reading it first would capture a mid-shake offset.
-        camTransform.DOKill(true);
-        Vector3 rest = camTransform.localPosition;
-        // DOShake ends close to, not exactly at, the start - snap back so the camera never drifts.
-        camTransform.DOShakePosition(duration, new Vector3(strength, strength, 0f), 25)
-            .SetLink(cam.gameObject)
-            .OnComplete(() => camTransform.localPosition = rest)
-            .OnKill(() => camTransform.localPosition = rest);
     }
 
     // ------------------------------------------------------------------ Lightning
@@ -205,8 +239,7 @@ public class BonusEffectController : MonoBehaviour
 
             Vector3 to = target.transform.position;
             DrawBolt(from, to);
-            // Burst immediately so this balloon can't be picked again - by this chain or by a
-            // bomb going off at the same moment.
+            // Burst immediately so this balloon can't be picked again by this chain.
             target.Burst();
             PlayPop();
             from = to;
