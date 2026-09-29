@@ -220,7 +220,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1980, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0.5
+  m_MatchWidthOrHeight: 1
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -282,7 +282,6 @@ GameObject:
   - component: {fileID: 350912289}
   - component: {fileID: 350912288}
   - component: {fileID: 350912287}
-  - component: {fileID: 350912286}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -290,23 +289,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &350912286
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 350912285}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c8abccb70ece724483248cd3d82a2d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  targetAspectRatio: {x: 16, y: 9}
-  targetCamera: {fileID: 0}
-  useMainCameraIfNull: 1
-  updateInEditor: 1
-  updateThreshold: 0.1
 --- !u!81 &350912287
 AudioListener:
   m_ObjectHideFlags: 0
@@ -805,6 +787,8 @@ MonoBehaviour:
   maxHaze: 0.35
   bobAmplitude: 0.08
   bobFrequencyRange: {x: 0.05, y: 0.12}
+  frozenTint: {r: 0.72, g: 0.9, b: 1, a: 1}
+  freezeTintDuration: 0.35
 --- !u!4 &1053552080
 Transform:
   m_ObjectHideFlags: 0
@@ -829,6 +813,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1113540939}
+  - component: {fileID: 1113540940}
   m_Layer: 0
   m_Name: Background
   m_TagString: Untagged
@@ -855,6 +840,20 @@ Transform:
   - {fileID: 784578250}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1113540940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113540938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e02b7ed88f83c743a436478dacd7f91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Archer.Scripts.Utility.AspectFitter
+  mode: 3
+  referenceAspect: {x: 16, y: 9}
 --- !u!1001 &1131548086
 PrefabInstance:
   m_ObjectHideFlags: 0

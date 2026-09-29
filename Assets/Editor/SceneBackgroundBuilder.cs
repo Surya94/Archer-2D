@@ -5,6 +5,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Archer.Scripts.Manager;
+using Archer.Scripts.Utility;
 
 namespace Archer.Editor
 {
@@ -80,6 +81,12 @@ namespace Archer.Editor
             GameObject background = new GameObject(BackgroundName);
             background.transform.position = position;
             background.transform.localScale = scale;
+
+            // Scales the art up on screens wider than 16:9 so no gap shows at the edges.
+            AspectFitter fitter = background.AddComponent<AspectFitter>();
+            SerializedObject fitterSo = new SerializedObject(fitter);
+            fitterSo.FindProperty("mode").enumValueIndex = (int)AspectFitter.Mode.CoverBackground;
+            fitterSo.ApplyModifiedPropertiesWithoutUndo();
 
             foreach (var layer in Layers)
             {

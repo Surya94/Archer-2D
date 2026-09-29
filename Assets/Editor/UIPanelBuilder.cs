@@ -302,7 +302,9 @@ namespace Archer.Editor
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1980f, 1080f);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            // Match height: the layout is always 1080 units tall and wide phones (2.2:1) just
+            // get more room at the sides. 0.5 shrank the usable height on those screens.
+            scaler.matchWidthOrHeight = 1f;
 
             CanvasGroup group = go.AddComponent<CanvasGroup>();
             LoadingScreenView view = go.AddComponent<LoadingScreenView>();
