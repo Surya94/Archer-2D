@@ -32,6 +32,9 @@ namespace Archer.Editor
         private const string FrostPath = ArtDir + "/frost.png";
         private const string FreezeSoundPath = ArtDir + "/freeze.wav";
         private const string ThawSoundPath = ArtDir + "/thaw.wav";
+        private const string ShurikenPath = ArtDir + "/shuriken.png";
+        private const string ShurikenSoundPath = ArtDir + "/shuriken.wav";
+        private const string ShurikenHitSoundPath = ArtDir + "/shuriken_hit.wav";
         private const string AdditiveMaterialPath = ArtDir + "/BonusAdditive.mat";
 
         private const string QuiverPath = "Assets/Art/Elf Archer/1_quiver.png";
@@ -59,6 +62,7 @@ namespace Archer.Editor
             new BonusSpec { type = BonusType.ExtraArrows, name = "ArrowsBonusBalloon", basePrefab = "GreenBalloon 1.prefab", payloadPath = QuiverPath, glow = new Color(0.55f, 1f, 0.45f, 0.9f) },
             new BonusSpec { type = BonusType.TimeFreeze, name = "TimeBonusBalloon", basePrefab = "PurpleBalloon 1.prefab", payloadPath = ClockPath, glow = new Color(0.6f, 0.95f, 1f, 0.95f) },
             new BonusSpec { type = BonusType.Lightning, name = "LightningBonusBalloon", basePrefab = "BlueBalloon 1.prefab", payloadPath = BoltPath, glow = new Color(0.55f, 0.9f, 1f, 0.9f) },
+            new BonusSpec { type = BonusType.Shuriken, name = "ShurikenBonusBalloon", basePrefab = "RedBalloon 1.prefab", payloadPath = ShurikenPath, glow = new Color(0.92f, 0.95f, 1f, 0.9f) },
         };
 
         [MenuItem("Archer/Gameplay/Build Bonus Balloons")]
@@ -241,6 +245,7 @@ namespace Archer.Editor
             controller.clockSprite = Load(ClockPath);
             controller.sparkleSprite = Load(GlowPath);
             controller.boltSprite = Load(BoltPath);
+            controller.shurikenSprite = Load(ShurikenPath);
             controller.additiveMaterial = additive;
 
             GamePlayHUD hud = Object.FindAnyObjectByType<GamePlayHUD>(FindObjectsInactive.Include);
@@ -351,8 +356,12 @@ namespace Archer.Editor
 
         private static void GenerateSounds()
         {
-            WriteWav(FreezeSoundPath, SynthFreeze());
-            WriteWav(ThawSoundPath, SynthThaw());
+            // Only missing files are synthesized, so a real sound dropped in under the same name
+            // survives a re-run.
+            WriteWavIfMissing(FreezeSoundPath, SynthFreeze);
+            WriteWavIfMissing(ThawSoundPath, SynthThaw);
+            WriteWavIfMissing(ShurikenSoundPath, SynthShurikenThrow);
+            WriteWavIfMissing(ShurikenHitSoundPath, SynthShurikenHit);
             AssetDatabase.Refresh();
 
             BowSoundManager data = AssetDatabase.LoadAssetAtPath<BowSoundManager>(SoundDataPath);
@@ -365,7 +374,60 @@ namespace Archer.Editor
             SerializedObject so = new SerializedObject(data);
             so.FindProperty("freezeSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(FreezeSoundPath);
             so.FindProperty("thawSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(ThawSoundPath);
+            so.FindProperty("shurikenSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(ShurikenSoundPath);
+            so.FindProperty("shurikenHitSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(ShurikenHitSoundPath);
             so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void WriteWavIfMissing(string path, System.Func<float[]> synth)
+        {
+            if (!File.Exists(path))
+                WriteWav(path, synth());
+        }
+
+        /// <summary>A rising airy whoosh with a bright metallic ring - the throw.</summary>
+        private static float[] SynthShurikenThrow()
+        {
+            float[] buffer = new float[(int)(SampleRate * 0.55f)];
+            System.Random rng = new System.Random(21);
+            float low = 0f, prevLow = 0f;
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                float t = i / (float)SampleRate;
+                float env = Mathf.Sin(Mathf.PI * Mathf.Clamp01(t / 0.55f));
+                // Band-limited noise: a one-pole low-pass, then the difference (crude band-pass)
+                // whose cutoff sweeps up for the whoosh.
+                float noise = (float)rng.NextDouble() * 2f - 1f;
+                float k = Mathf.Lerp(0.08f, 0.35f, t / 0.55f);
+                low += (noise - low) * k;
+                float band = low - prevLow * 0.6f;
+                prevLow = low;
+                buffer[i] = band * env * 0.6f;
+
+                // The ring: two inharmonic partials, rising a little in pitch.
+                float f = 2400f + 900f * t;
+                float ring = Mathf.Sin(2f * Mathf.PI * f * t) + 0.5f * Mathf.Sin(2f * Mathf.PI * f * 1.51f * t);
+                buffer[i] += ring * Mathf.Exp(-t * 6f) * Mathf.Clamp01(t * 300f) * 0.12f;
+            }
+            return buffer;
+        }
+
+        /// <summary>A short metallic "shing" for each balloon the shuriken cuts.</summary>
+        private static float[] SynthShurikenHit()
+        {
+            float[] partials = { 3100f, 4650f, 6200f };
+            float[] buffer = new float[(int)(SampleRate * 0.25f)];
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                float t = i / (float)SampleRate;
+                float env = Mathf.Exp(-t * 22f) * Mathf.Clamp01(t * 800f);
+                float v = 0f;
+                for (int p = 0; p < partials.Length; p++)
+                    v += Mathf.Sin(2f * Mathf.PI * partials[p] * t) / (p + 1);
+                buffer[i] = v * env * 0.3f;
+            }
+            AddCrackle(buffer, new System.Random(5), 0f, 0.03f, 12, 0.5f);
+            return buffer;
         }
 
         /// <summary>A rising glassy arpeggio over a crackle of ice forming.</summary>
@@ -484,11 +546,14 @@ namespace Archer.Editor
 
         private static void GenerateArt()
         {
-            WritePng(ClockPath, DrawClock(256));
-            WritePng(BoltPath, DrawBolt(256));
-            WritePng(GlowPath, DrawGlow(256));
-            WritePng(SnowflakePath, DrawSnowflake(256));
-            WritePng(FrostPath, DrawFrostVignette(512));
+            // Only missing files are drawn, so real art dropped in under the same name survives
+            // a re-run (it used to be overwritten every time).
+            WritePngIfMissing(ClockPath, () => DrawClock(256));
+            WritePngIfMissing(BoltPath, () => DrawBolt(256));
+            WritePngIfMissing(GlowPath, () => DrawGlow(256));
+            WritePngIfMissing(SnowflakePath, () => DrawSnowflake(256));
+            WritePngIfMissing(FrostPath, () => DrawFrostVignette(512));
+            WritePngIfMissing(ShurikenPath, () => DrawShuriken(256));
 
             AssetDatabase.Refresh();
             ConfigureSprite(ClockPath, true);
@@ -496,6 +561,13 @@ namespace Archer.Editor
             ConfigureSprite(GlowPath, true);
             ConfigureSprite(SnowflakePath, true);
             ConfigureSprite(FrostPath, true);
+            ConfigureSprite(ShurikenPath, true);
+        }
+
+        private static void WritePngIfMissing(string path, System.Func<Texture2D> draw)
+        {
+            if (!File.Exists(path))
+                WritePng(path, draw());
         }
 
         private static void ConfigureSprite(string path, bool alphaIsTransparency)
@@ -727,6 +799,51 @@ namespace Archer.Editor
             Stamp(px, size, p => Mathf.Max(PolygonDistance(p, bolt) + 10f, p.x - 128f), new Color32(0xFF, 0xEC, 0x8A, 0xFF));
 
             return ToTexture(px, size);
+        }
+
+        /// <summary>Four-pointed throwing star: ink outline, steel blades, centre hole, glint.</summary>
+        private static Texture2D DrawShuriken(int size)
+        {
+            Color[] px = new Color[size * size];
+            Vector2 c = new Vector2(size * 0.5f, size * 0.5f);
+
+            // Each blade tip is long; the notches between them pull in close to the hub, and are
+            // offset a little so the blades look swept (it reads as spinning one way). One tip
+            // points straight up: the balloon string is tied to the top-centre of the sprite.
+            Vector2[] star = new Vector2[8];
+            for (int i = 0; i < 4; i++)
+            {
+                float tip = i * Mathf.PI * 0.5f + Mathf.PI * 0.5f;
+                float notch = tip + Mathf.PI * 0.25f + 0.18f;
+                star[i * 2] = c + new Vector2(Mathf.Cos(tip), Mathf.Sin(tip)) * 118f;
+                star[i * 2 + 1] = c + new Vector2(Mathf.Cos(notch), Mathf.Sin(notch)) * 34f;
+            }
+
+            Color steel = new Color32(0x9A, 0xA6, 0xB4, 0xFF);
+            Color steelLight = new Color32(0xD6, 0xDE, 0xE8, 0xFF);
+
+            Stamp(px, size, p => PolygonDistance(p, star) - 5f, Ink);
+            Stamp(px, size, p => PolygonDistance(p, star) + 2f, steel);
+            // Lighter bevel on the upper-left half of each blade.
+            Stamp(px, size, p => Mathf.Max(PolygonDistance(p, star) + 10f, (p.x - c.x) - (p.y - c.y)), steelLight);
+            // Hub ring and hole (alpha cut-out so the background shows through).
+            Stamp(px, size, p => Vector2.Distance(p, c) - 24f, Ink);
+            Stamp(px, size, p => Vector2.Distance(p, c) - 18f, steel);
+            CutCircle(px, size, c, 10f);
+
+            return ToTexture(px, size);
+        }
+
+        /// <summary>Clears alpha inside a circle - a hole, which Stamp's blend can't make.</summary>
+        private static void CutCircle(Color[] px, int size, Vector2 centre, float radius)
+        {
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), centre) - radius;
+                float keep = Mathf.Clamp01(0.5f + d / 1.5f);
+                px[y * size + x].a *= keep;
+            }
         }
 
         private static Texture2D DrawGlow(int size)

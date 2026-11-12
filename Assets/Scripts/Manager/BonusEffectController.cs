@@ -33,6 +33,24 @@ public class BonusEffectController : MonoBehaviour
     public float lightningJumpDelay = 0.1f;
     public Color boltColour = new Color(0.75f, 0.95f, 1f, 1f);
 
+    [Header("Shuriken")]
+    public Sprite shurikenSprite;
+    public float shurikenDuration = 15f;
+    [Tooltip("Horizontal sweep speed, world units per second.")]
+    public float shurikenSpeed = 9f;
+    [Tooltip("Spin, degrees per second.")]
+    public float shurikenSpinSpeed = 720f;
+    [Tooltip("Hit radius around the shuriken's centre, world units.")]
+    public float shurikenHitRadius = 0.45f;
+    [Tooltip("World height of the shuriken sprite.")]
+    public float shurikenHeight = 0.9f;
+    [Tooltip("Left/right ends of the sweep as fractions of screen width (covers the balloon columns, not the bow).")]
+    public Vector2 shurikenSweepViewport = new Vector2(0.42f, 0.97f);
+    [Tooltip("The shuriken's height is clamped to this band of the screen so it never hides under the HUD.")]
+    public Vector2 shurikenHeightViewport = new Vector2(0.15f, 0.85f);
+    [Tooltip("Seconds before the end that the shuriken blinks as a warning.")]
+    public float shurikenWarningTime = 1.5f;
+
     [Header("Rendering")]
     [Tooltip("Additive material for the bolts and thaw sparkles.")]
     public Material additiveMaterial;
@@ -44,6 +62,8 @@ public class BonusEffectController : MonoBehaviour
     private Camera cam;
     private Coroutine freezeRoutine;
     private float freezeRemaining;
+    private Coroutine shurikenRoutine;
+    private float shurikenRemaining;
 
     void Start()
     {
@@ -71,7 +91,108 @@ public class BonusEffectController : MonoBehaviour
             case BonusType.Lightning:
                 StartCoroutine(ChainLightning(signalData.position));
                 break;
+            case BonusType.Shuriken:
+                // One shuriken at a time: a second pickup tops the running one back up.
+                if (shurikenRoutine != null)
+                    shurikenRemaining = shurikenDuration;
+                else
+                    shurikenRoutine = StartCoroutine(ShurikenRoutine(signalData.position));
+                break;
         }
+    }
+
+    // ------------------------------------------------------------------ Shuriken
+
+    /// <summary>
+    /// A spinning shuriken holds the height it was released at and sweeps left and right across
+    /// the balloon columns, popping whatever it touches. Balloons rise through every height, so
+    /// a fixed line catches everything that crosses it. Scaled time: it stops while paused.
+    /// </summary>
+    private IEnumerator ShurikenRoutine(Vector3 origin)
+    {
+        if (SoundManger.Instance != null)
+            SoundManger.Instance.PlayShurikenThrow();
+
+        float left = ViewportX(shurikenSweepViewport.x, origin.z);
+        float right = ViewportX(shurikenSweepViewport.y, origin.z);
+        float y = origin.y;
+        if (cam != null)
+        {
+            float depth = origin.z - cam.transform.position.z;
+            float bottom = cam.ViewportToWorldPoint(new Vector3(0.5f, shurikenHeightViewport.x, depth)).y;
+            float top = cam.ViewportToWorldPoint(new Vector3(0.5f, shurikenHeightViewport.y, depth)).y;
+            y = Mathf.Clamp(y, bottom, top);
+        }
+
+        Vector3 position = new Vector3(Mathf.Clamp(origin.x, left, right), y, origin.z);
+        SpriteRenderer star = CreateSprite("ShurikenFX", shurikenSprite, position, shurikenHeight);
+        star.sortingOrder = sortingOrder + 2;
+        Transform t = star.transform;
+        float scale = t.localScale.x;
+        t.localScale = Vector3.zero;
+        t.DOScale(scale, 0.25f).SetEase(Ease.OutBack).SetLink(star.gameObject);
+
+        // Head for the far side first, so the opening sweep covers the most ground.
+        float direction = position.x - left < right - position.x ? 1f : -1f;
+        List<Enemy> targets = new List<Enemy>();
+        shurikenRemaining = shurikenDuration;
+
+        Color iceTint = Color.Lerp(Color.white, iceColour, 0.5f);
+
+        while (shurikenRemaining > 0f && star != null)
+        {
+            yield return null;
+            if (star == null) break;
+
+            // Time Freeze holds the shuriken too: no movement, spin, hits or countdown until the
+            // thaw, then it carries on from the same spot with the time it had left.
+            if (freezeRoutine != null)
+            {
+                star.color = iceTint;
+                continue;
+            }
+
+            float dt = Time.deltaTime;
+            shurikenRemaining -= dt;
+
+            position.x += direction * shurikenSpeed * dt;
+            if (position.x >= right) { position.x = right; direction = -1f; }
+            else if (position.x <= left) { position.x = left; direction = 1f; }
+            t.position = position;
+            t.Rotate(0f, 0f, -shurikenSpinSpeed * dt);
+
+            // Snapshot: Burst() removes the balloon from Alive.
+            targets.Clear();
+            targets.AddRange(Enemy.Alive);
+            foreach (Enemy enemy in targets)
+            {
+                if (enemy == null || !enemy.IsAlive || !enemy.Overlaps(position, shurikenHitRadius)) continue;
+                enemy.Burst();
+                if (SoundManger.Instance != null)
+                    SoundManger.Instance.PlayShurikenHit();
+            }
+
+            // Blink in the last moments so its end doesn't come as a surprise.
+            bool warning = shurikenRemaining < shurikenWarningTime;
+            Color c = Color.white;
+            c.a = warning ? (Mathf.PingPong(shurikenRemaining * 8f, 1f) < 0.5f ? 0.35f : 1f) : 1f;
+            star.color = c;
+        }
+
+        shurikenRoutine = null;
+        if (star == null) yield break;
+
+        DOTween.Sequence()
+            .Append(t.DOScale(0f, 0.3f).SetEase(Ease.InBack))
+            .Join(star.DOFade(0f, 0.3f))
+            .SetLink(star.gameObject)
+            .OnComplete(() => Destroy(star.gameObject));
+    }
+
+    private float ViewportX(float viewportX, float z)
+    {
+        if (cam == null) return 0f;
+        return cam.ViewportToWorldPoint(new Vector3(viewportX, 0.5f, z - cam.transform.position.z)).x;
     }
 
     // ------------------------------------------------------------------ Extra Arrows
@@ -368,9 +489,11 @@ public class BonusEffectController : MonoBehaviour
         return renderer;
     }
 
+    // The balloon's own pop sound and particles come from GameFeelController via
+    // OnBalloonBurst; this is just the crackle of the bolt reaching it.
     private static void PlayPop()
     {
         if (SoundManger.Instance != null)
-            SoundManger.Instance.PlayHitSound();
+            SoundManger.Instance.PlayLightningZap();
     }
 }

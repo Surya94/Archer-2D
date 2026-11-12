@@ -30,6 +30,15 @@ public class ScoreManager
     public int arrowCount { get; set; }
     public int streakCount { get; set; }
 
+    /// <summary>
+    /// The best score as it stood when this run began. BestScore itself is promoted on game
+    /// over, and a revive continues the same run, so "did this run beat the record" has to be
+    /// measured against this snapshot rather than the live value.
+    /// </summary>
+    public int BestAtRunStart { get; private set; }
+
+    public bool IsNewBest => CurrentScore > 0 && CurrentScore > BestAtRunStart;
+
     public ScoreManager()
     {
         SignalManager.Instance.AddObserver<OnBalloonBurst>(UpdateScore);
@@ -86,7 +95,11 @@ public class ScoreManager
 
     public void ResetGame()
     {
+        BestAtRunStart = BestScore;
         CurrentScore = 0;
         arrowCount = MAX_ARROW;
+        // In-memory and this object lives for the whole session, so without this a streak
+        // carried over from the previous run into the first shot of the next.
+        streakCount = 0;
     }
 }

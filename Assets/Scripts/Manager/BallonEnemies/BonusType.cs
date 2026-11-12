@@ -2,5 +2,7 @@ public enum BonusType
 {
     ExtraArrows,
     TimeFreeze,
-    Lightning
+    Lightning,
+    // Append new types at the end: prefabs serialize this as an int.
+    Shuriken
 }

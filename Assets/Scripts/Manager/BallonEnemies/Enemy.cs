@@ -12,6 +12,8 @@ public class Enemy : PoolableObject
     public Rigidbody2D rb;
     public Animator animator;
     public float destoryTime = 5f;
+    [Tooltip("Colour of the pop particles. Leave fully transparent to pick it from the balloon's type (RedBalloonEnemy -> red, ...).")]
+    public Color burstColour = new Color(0f, 0f, 0f, 0f);
 
     /// <summary>
     /// Balloons currently spawned and not yet burst. Bonus effects (bomb, lightning) pick their
@@ -93,10 +95,35 @@ public class Enemy : PoolableObject
             new OnBalloonBurst()
             {
                 position = transform.position,
-                pointsToGive = expToGive
+                pointsToGive = expToGive,
+                colour = ResolveBurstColour(),
+                size = body != null ? body.bounds.size.y : 1f
             });
         OnBurst();
         StartCoroutine(DestroyEnemyAfterDelay(destoryTime));
+    }
+
+    /// <summary>
+    /// The per-colour subclasses exist only to tell prefabs apart, which is exactly what is
+    /// needed here: the type name carries the colour, so no prefab has to be edited for the pop
+    /// particles to match. An explicit burstColour on the prefab wins.
+    /// </summary>
+    private Color ResolveBurstColour()
+    {
+        if (burstColour.a > 0f) return burstColour;
+
+        string type = GetType().Name;
+        if (type.StartsWith("Red")) burstColour = new Color32(0xE8, 0x43, 0x3F, 0xFF);
+        else if (type.StartsWith("Blue")) burstColour = new Color32(0x3F, 0xA9, 0xF5, 0xFF);
+        else if (type.StartsWith("Green")) burstColour = new Color32(0x5C, 0xC7, 0x4A, 0xFF);
+        else if (type.StartsWith("Orange")) burstColour = new Color32(0xF5, 0x92, 0x2E, 0xFF);
+        else if (type.StartsWith("Pink")) burstColour = new Color32(0xF5, 0x6F, 0xA8, 0xFF);
+        else if (type.StartsWith("Purple")) burstColour = new Color32(0x9B, 0x5D, 0xE5, 0xFF);
+        else if (type.StartsWith("Yellow")) burstColour = new Color32(0xF9, 0xD4, 0x3B, 0xFF);
+        else if (type.StartsWith("Bonus")) burstColour = new Color32(0xFF, 0xC5, 0x3D, 0xFF);
+        else burstColour = Color.white;
+
+        return burstColour;
     }
 
     /// <summary>Hook for subclasses that do something extra when popped.</summary>
@@ -213,6 +240,21 @@ public class Enemy : PoolableObject
             && viewport.y > margin && viewport.y < 1f - margin;
     }
 
+    /// <summary>
+    /// True when a circle at point touches this balloon's hit collider. Lets bonus effects
+    /// hit-test without physics, the same way they pick targets from Alive.
+    /// </summary>
+    public bool Overlaps(Vector2 point, float radius)
+    {
+        if (hitCollider == null)
+            hitCollider = GetComponent<Collider2D>();
+        if (hitCollider == null) return false;
+
+        Bounds bounds = hitCollider.bounds;
+        Vector3 p = new Vector3(point.x, point.y, bounds.center.z);
+        return bounds.SqrDistance(p) <= radius * radius;
+    }
+
     public void GotToTarget(Transform target)
     {
         if (target == null)
@@ -222,7 +264,8 @@ public class Enemy : PoolableObject
         }
 
         Vector3 tragetPos = new Vector3(transform.position.x, target.position.y,transform.position.z);
-        transform.DOMove(tragetPos, movementSpeed).OnComplete(()=> { DestroyEnemy(); Debug.Log("Ballon reached Destination"); });
+        // Linear: the project's default ease (OutQuad) made balloons crawl near the top.
+        transform.DOMove(tragetPos, movementSpeed).SetEase(Ease.Linear).OnComplete(()=> { DestroyEnemy(); Debug.Log("Ballon reached Destination"); });
     }
 
     // A DOMove started here outlives both the pooled despawn and the scene unload: the tween

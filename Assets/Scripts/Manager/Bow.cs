@@ -2,10 +2,23 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using DG.Tweening;
 using Archer.Scripts.Manager;
+using Archer.Scripts.Models;
+using Archer.Scripts.Utility;
 
 public class Bow : MonoBehaviour
 {
+    [Header("Feel")]
+    [Tooltip("The bow sprite that recoils on release. Defaults to the parent of the string end points; the root is left alone because it owns the aim rotation.")]
+    public Transform bowVisual;
+
+    private Vector3 visualRestPosition;
+    private Sequence recoil;
+    private Tween twang;
+    private bool reachedFullDraw;
+
     public GameObject arroeObj;
     public GameObject pointsObj;
     public Transform drawStartPoint;
@@ -34,6 +47,12 @@ public class Bow : MonoBehaviour
     {
         scoreManager = DependencyResolver.Resolve<ScoreManager>();
         scoreManager.ResetGame();
+
+        if (bowVisual == null && endPointA != null)
+            bowVisual = endPointA.parent;
+        if (bowVisual != null)
+            visualRestPosition = bowVisual.localPosition;
+
         if (bowData.enableAimAssit)
         {
             points = new GameObject[bowData.numberOfPoints];
@@ -43,7 +62,9 @@ public class Bow : MonoBehaviour
                 points[i].SetActive(false);
             }
         }
-        drawDistance = Vector2.Distance(drawStartPoint.position, drawEndPoint.position);
+        // Local, not world: this is applied as a localPosition offset in OnDragBow, so it must
+        // stay in the bow root's space or a scaled bow would over-pull the arrow.
+        drawDistance = Vector2.Distance(drawStartPoint.localPosition, drawEndPoint.localPosition);
         lineRenderer.positionCount = 2;
         lineRenderer.SetPosition(0, endPointA.position);
         lineRenderer.SetPosition(1, endPointB.position);
@@ -67,6 +88,9 @@ public class Bow : MonoBehaviour
             SignalManager.Instance.RemoveObserver<OnArrowDestoryed>(OnArrowDestory);
             SignalManager.Instance.RemoveObserver<OnRunContinued>(OnRunContinue);
         }
+
+        recoil?.Kill();
+        twang?.Kill();
     }
 
     private void OnArrowDestory(OnArrowDestoryed destoryed)
@@ -148,9 +172,17 @@ public class Bow : MonoBehaviour
         // Input is read raw, not through the UI, so the pause/game-over dimmer and the loading
         // overlay don't block it - a tap on RESUME or during a scene load would draw the bow.
         if (GameManager.Instance.IsPaused)
+        {
+            // Paused mid-pull (Android back button): there will be no mouse-up to end the
+            // drag, so let go of it now rather than resuming with a half-drawn bow.
+            if (isDragStarted)
+                CancelDrag();
             return;
+        }
 
-        if (Input.GetMouseButtonDown(0))
+        // A press that lands on a button (pause) belongs to the UI. Without this, pressing
+        // pause and sliding off it drew the bow and could loose an arrow.
+        if (Input.GetMouseButtonDown(0) && !IsPointerOverUI())
         {
             OnStartDrag();
         }
@@ -160,9 +192,12 @@ public class Bow : MonoBehaviour
             OnDragBow();
         }
 
-        if (Input.GetMouseButtonUp(0) && isDraging)
+        if (Input.GetMouseButtonUp(0) && isDragStarted)
         {
-            OnReleaseArrow();
+            if (isDraging)
+                OnReleaseArrow();
+            else
+                CancelDrag();
         }
 
         if (bowData.enableAimAssit)
@@ -174,6 +209,42 @@ public class Bow : MonoBehaviour
         isDragStarted = true;
         canPlayLoadSound = true;
         mousePosA = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        reachedFullDraw = false;
+        StopReleaseTweens();
+        SignalManager.Instance.DispatchSignal(new OnBowDragStarted
+        {
+            bow = this,
+            screenPosition = Input.mousePosition
+        });
+    }
+
+    /// <summary>
+    /// End a drag without firing: the pull was too short, or the game paused mid-pull. Puts the
+    /// arrow back on the rest position and straightens the string.
+    /// </summary>
+    private void CancelDrag()
+    {
+        isDragStarted = false;
+        isDraging = false;
+
+        if (newArrow != null)
+            newArrow.transform.localPosition = drawStartPoint.localPosition;
+        ResetBowString();
+
+        SignalManager.Instance.DispatchSignal(new OnBowDragEnded { fired = false, power = 0f });
+    }
+
+    private static bool IsPointerOverUI()
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null) return false;
+
+        // The parameterless overload only knows about the mouse; a touch needs its finger id.
+        if (Input.touchCount > 0)
+            return eventSystem.IsPointerOverGameObject(Input.GetTouch(0).fingerId);
+
+        return eventSystem.IsPointerOverGameObject();
     }
 
     private void OnDragBow()
@@ -185,7 +256,20 @@ public class Bow : MonoBehaviour
         float dragDelta = launchForce / bowData.MaxForce;
         newArrow.transform.localPosition = drawStartPoint.localPosition - new Vector3(drawDistance * dragDelta, 0, 0);
         RenderBowString();
-        
+
+        // A light tick the moment the bow reaches full draw; re-armed once it eases off.
+        if (dragDelta >= 0.999f)
+        {
+            if (!reachedFullDraw)
+            {
+                reachedFullDraw = true;
+                Haptics.Light();
+            }
+        }
+        else if (dragDelta < 0.9f)
+        {
+            reachedFullDraw = false;
+        }
 
         isDraging = launchForce > bowData.MinForce;
         if (isDraging)
@@ -237,6 +321,52 @@ public class Bow : MonoBehaviour
         }
     }
 
+    // ------------------------------------------------------------------ Feel
+
+    /// <summary>Release: the bow kicks forward and settles back while the string twangs.</summary>
+    private void PlayRelease(float power)
+    {
+        if (bowVisual != null)
+        {
+            recoil?.Kill();
+            bowVisual.localPosition = visualRestPosition;
+            recoil = DOTween.Sequence()
+                .Append(bowVisual.DOLocalMoveX(visualRestPosition.x + 0.07f * power, 0.05f).SetEase(Ease.OutQuad))
+                .Append(bowVisual.DOLocalMoveX(visualRestPosition.x, 0.22f).SetEase(Ease.OutBack))
+                .SetLink(gameObject);
+        }
+
+        twang?.Kill();
+        float amplitude = 0.14f * power;
+        twang = DOVirtual.Float(0f, 1f, 0.3f, t =>
+            {
+                // A decaying wobble of the string's midpoint along the shot direction.
+                float offset = amplitude * Mathf.Exp(-5f * t) * Mathf.Sin(t * Mathf.PI * 7f);
+                Vector3 mid = (endPointA.position + endPointB.position) * 0.5f + transform.right * offset;
+                lineRenderer.positionCount = 3;
+                lineRenderer.SetPosition(0, endPointA.position);
+                lineRenderer.SetPosition(1, mid);
+                lineRenderer.SetPosition(2, endPointB.position);
+            })
+            .SetEase(Ease.Linear)
+            .SetLink(gameObject)
+            .OnComplete(() =>
+            {
+                lineRenderer.positionCount = 2;
+                lineRenderer.SetPosition(0, endPointA.position);
+                lineRenderer.SetPosition(1, endPointB.position);
+            });
+    }
+
+    private void StopReleaseTweens()
+    {
+        recoil?.Kill();
+        twang?.Kill();
+
+        if (bowVisual != null)
+            bowVisual.localPosition = visualRestPosition;
+    }
+
     private void RenderBowString()
     {
         lineRenderer.positionCount = 3;
@@ -247,6 +377,8 @@ public class Bow : MonoBehaviour
 
     private void ResetBowString()
     {
+        // A new arrow can be nocked while the release twang is still ringing.
+        twang?.Kill();
         lineRenderer.positionCount = 2;
         lineRenderer.SetPosition(0, endPointA.position);
         lineRenderer.SetPosition(1, endPointB.position);
@@ -258,13 +390,18 @@ public class Bow : MonoBehaviour
             return;
         newArrow.transform.parent = null;
         var arrow = newArrow.GetComponent<Arrow>();
-        arrow.SetFireData(launchForce / bowData.MaxForce);
+        float power = launchForce / bowData.MaxForce;
+        arrow.SetFireData(power);
         arrow.rb.bodyType = RigidbodyType2D.Dynamic;
         arrow.rb.linearVelocity = transform.right * launchForce;
         arrow.isFired = true;
         newArrow = null;
         ResetBowString();
-        SoundManger.Instance.PlayFireSound();
+
+        PlayRelease(power);
+        SoundManger.Instance.PlayFireSound(power);
+        if (power > 0.7f) Haptics.Medium(); else Haptics.Light();
+        SignalManager.Instance.DispatchSignal(new OnBowDragEnded { fired = true, power = power });
     }
 
     private Vector2 pointPosition(float t)

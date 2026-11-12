@@ -23,9 +23,10 @@ An investigation via Unity MCP (firing arrows, driving signals, reading scenes l
 |---|---|---|
 | 0 — Baseline hygiene & compile-blocking fixes | ✅ Done | See below |
 | 1 — Core gameplay loop fixes | ✅ Done | See below |
-| 2 — Activate the UI panel layer | 🟨 Partial | GameOver + PauseMenu + HUD + MainMenu + Settings shell + loading screen done; Settings panel not yet placed in GameScene |
-| 3 — SoundManger completion | ⬜ Pending | Implement the 5 `NotImplementedException` stubs |
-| 4 — Settings persistence + Economy foundation | ⬜ Pending | `EconomyManager`: currency, cosmetics, ads-removed, settings |
+| 2 — Activate the UI panel layer | ✅ Done | All panels built; Settings is functional and placed in both scenes (see polish pass) |
+| 3 — SoundManger completion | ✅ Done | Stubs implemented, pooled 2D playback, music player (no track yet) - see polish pass |
+| 4 — Settings persistence + Economy foundation | 🟨 Partial | Sound/Music/Vibration persist via `GameSettings`; `EconomyManager` (currency, cosmetics, ads-removed) still pending |
+| Polish — UI/UX + gratification pass | 🟨 Partial | Built and Editor-verified; device checks and a few items open (see below) |
 | 5 — AppLovin MAX ads integration | 🟨 Partial | MAX 8.6.6 imported, `APPLOVIN_MAX` on (Android); rewarded wired, simulated until ad unit id is set. Banner was added then **removed** (2026-09-28). Interstitial, consent flow, device test pending |
 | 6 — Unity IAP integration | ⬜ Pending | Needs Play Console app/products (human step) |
 | 7 — Shop / cosmetics UI | ⬜ Pending | `ShopPanel`, skin ScriptableObjects, equip logic |
@@ -152,6 +153,26 @@ Wiring up Restart/Home made runtime scene reloading reachable for the first time
   - MAX Terms & Privacy Policy (UMP) consent flow, which needs a hosted privacy-policy URL.
   - Interstitial placement.
   - Device test in MAX test mode / Mediation Debugger.
+
+### Polish — UI/UX + gratification pass 🟨
+
+Goal: take the working loop from "prototype" to shippable look and feel. Decisions: aim-trajectory preview stays off; music is a player + toggle with **no track** yet; no hit-stop/slow-mo (`Time.timeScale` stays owned by `GameManager`).
+
+- **Asset pipeline:** `Archer/FX/Build Feel Assets` (`Assets/Editor/FeelAssetBuilder.cs`) generates the TMP font assets, the UI sprite kit (`Assets/Art/UI/Kit`), `Assets/Prefabs/PopBurst.prefab` and the synthesized SFX (`Assets/Sound/Generated`). Run it **before** `Archer/UI/1..4`. Fonts are Lilita One (OFL) and Material Icons Round (Apache 2.0); see `Assets/Art/THIRD_PARTY.md`.
+- **SFX sources:** the owner added three Kenney CC0 packs under `Assets/Audio/` (UI Audio, RPG Audio, Impact Sounds). `Archer/FX/Assign Kenney Sounds` maps seven slots to them (UI click/back/toggle, arrow gained, bonus collected, streak lost, streak callout) and imports those clips mono + normalised; the mapping table is in `FeelAssetBuilder.cs` and listed in `Assets/Art/THIRD_PARTY.md`. **Five slots are still synthesized** because the packs have no match: balloon pop, big pop, lightning zap, game-over sting, new-best fanfare. The picks were made by file name and measured length/level, **not by ear** - they need an audition.
+- **Audio / settings / haptics:** `SoundManger` plays through 10 pooled 2D sources with pitch jitter and a per-clip cooldown; the 5 stubs are implemented. `GameSettings` (static, PlayerPrefs) holds Sound/Music/Vibration and dispatches `OnSettingsChanged`. `Haptics` wraps Android `VibrationEffect`. `Application.targetFrameRate = 60` at boot.
+- **Game feel:** `GameFeelController` (scene object `GameFeel`) reacts to signals: pooled colour-matched pop particles, pop pitch rising with the streak, camera shake, combo badge, NICE!/GREAT!/... callouts at streaks 2/3/5/8/12, lightning flash. `OnBalloonBurst` now carries `colour` and `size`. `Bow` recoils and twangs on release and dispatches `OnBowDragStarted`/`OnBowDragEnded`; `FirstRunHint` listens to those. The draw-time visuals first built here (bow flex + tremble, string turning red, the HUD drag indicator) were **removed at the owner's request** - only the full-draw haptic tick remains during the pull.
+- **Bow input fixes:** a press that starts over UI no longer draws the bow; a too-short pull or a pause mid-pull now cancels cleanly (`CancelDrag`). `Bow.drawDistance` is measured in local space (required by the 1.3x bow scale).
+- **UI:** `UIStyle` buttons are layered (lip / face / gloss / icon) with `UIButtonFeel` supplying press motion, click and haptic - panels no longer call `PlayButtonClickSound()` themselves. `PanelIntro` animates card entrances without touching `BaseUIPanel.Show/Hide`. Game Over counts the score up and, on `ScoreManager.IsNewBest`, stamps a NEW BEST ribbon with `UIConfetti`. Settings has working toggles and is now in GameScene, so Pause -> SETTINGS works. Main menu hides QUIT on mobile. HUD lives under a `SafeArea` child (`SafeAreaFitter`).
+- **Small fixes on the way:** `ScoreManager.ResetGame()` now resets `streakCount` (it carried over between runs); `Archer/UI/3. Wire MainMenu UI` is re-runnable.
+- **Verified in the Editor (Unity MCP, real-time play):** zero compile/runtime errors; HUD, pop bursts, combo badge, callout, first-run hint, main menu, Settings (toggles persist), Pause, Pause -> Settings -> Back -> Resume, Game Over with new best, rewarded revive, 2x Restart with flat observer counts.
+- **Testing note:** the MCP screenshot tool **pauses the Editor** in play mode, and `EditorApplication.Step()` while paused does not resume UI coroutines once `timeScale` is 0. That combination is what looked like `UIManager.isTransitioning` sticking - almost certainly the cause of the "unreproduced glitch" in Stage 2 (part 4). Unpause after each screenshot and let the Editor run in real time (`Application.runInBackground = true`).
+- **Open:**
+  - Device-only: haptics, real touch drag and the press-over-UI guard, safe area on a notched phone, 60 fps, audio mix on phone speakers.
+  - Not checked: 20:9 and 4:3 layouts for the new HUD/panels; Game Over without a new best; `Bow Test` scene.
+  - Dropped: balloon spawn scale-in (they spawn off-screen) and a non-lethal hit flash (every balloon dies in one hit).
+  - The "+1 arrow" popup only had its typeface changed; it is still the old Animator prefab and reads small.
+  - No music track assigned.
 
 ## Remaining stages (summary)
 

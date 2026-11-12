@@ -31,7 +31,7 @@ namespace Archer.Scripts.View.Panels
 
         private void OnPauseClicked()
         {
-            SoundManger.Instance.PlayButtonClickSound();
+            // Click sound and haptic come from UIButtonFeel on the button.
             // Explicit Fade, and addToHistory so the pause menu's Resume/GoBack has somewhere
             // to return to. ShowPauseMenu() would transition instantly.
             UIManager.Instance.ChangeState(UIState.PauseMenu, UITransitionType.Fade, true);

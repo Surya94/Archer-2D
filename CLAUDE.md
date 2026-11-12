@@ -51,10 +51,23 @@ The codebase leans on four hand-rolled infrastructure systems (all in `Assets/Sc
 
 `GamePlayHUD` and VFX handlers (`Manager/VFX/`) are purely reactive — they listen for `OnUpdateScore`/`OnArrowsAdded`/etc. and update text or play effects, with no gameplay logic of their own.
 
-`SoundManger` (Singleton) loads a `BowSoundManager` ScriptableObject from a hardcoded `Resources.Load` path (`Scriptables/Sounds/BowSoundData`) and exposes simple `PlayXSound()` wrappers. Several of its methods (`PlaySFX`, `SetSFXEnabled`, `SetMusicVolume`, `SetSFXVolume`, `SetMusicEnabled`) are stubs that `throw new NotImplementedException()` — check before assuming they're wired up.
+`SoundManger` (Singleton, lazily created, never placed in a scene) loads a `BowSoundManager` ScriptableObject from a hardcoded `Resources.Load` path (`Scriptables/Sounds/BowSoundData`) and exposes `PlayXSound()` wrappers over a pool of 2D `AudioSource`s (`Play(clip, volume, pitch, jitter, cooldown)`). Null clips are ignored, so slots are optional. Music plays only if `BowSoundData.music` is assigned. Sound/Music/Vibration preferences live in the static `GameSettings` (`Utility/`), which dispatches `OnSettingsChanged`; vibration goes through `Haptics` (`Utility/`, Android only).
+
+`GameFeelController` (`Manager/Feel/`, scene object `GameFeel`) is the reactive gratification layer: pop particles (`PopBurstFX`, pooled), pop pitch, camera shake, combo badge and streak callouts. `FirstRunHint` (same folder) reacts to `OnBowDragStarted`/`OnBowDragEnded` from `Bow`. The bow has no visual feedback while drawing (by the owner's choice); it only recoils and twangs on release. Add new feedback here rather than inside gameplay classes.
+
+## UI and art are generated
+
+UI prefabs, the HUD and the art-side assets are built by editor scripts, not authored by hand — edit the builder, then re-run it:
+
+- `Archer/FX/Build Feel Assets` (`Editor/FeelAssetBuilder.cs`): TMP font assets, UI sprite kit, `PopBurst.prefab`, synthesized SFX. Run first.
+- `Archer/UI/1. Build UI Panel Prefabs`, `2. Wire GameScene UI`, `3. Wire MainMenu UI` (`Editor/UIPanelBuilder.cs`), `4. Build Gameplay HUD` (`Editor/HUDBuilder.cs`); shared look in `Editor/UIStyle.cs`. Scene instances follow the rebuilt prefabs, so `1` alone is enough for a panel layout change.
+- Buttons get their press motion, click sound and haptic from `UIButtonFeel`; panels must not play click sounds themselves. Panel entrance animation is `PanelIntro`, called from `OnStateEnter` — do not change `BaseUIPanel.Show/Hide`, whose `onComplete` callback `UIManager` blocks on.
+- Anything animated while paused or on Game Over must use unscaled time (`SetUpdate(true)`), because `GameManager.Pause()` sets `timeScale` to 0.
+
+When testing through Unity MCP: the screenshot tool pauses the Editor in play mode (unpause afterwards), and an unfocused Editor needs `Application.runInBackground = true` to keep ticking.
 
 ## Known rough edges to be aware of
 
 - `Bow.Update()` contains a large commented-out block duplicating arrow-respawn logic that now happens via the `OnArrowDestoryed` signal handler — leave it alone unless asked to clean it up.
-- `GameManager` (`Manager/GameManager.cs`) is an empty stub.
+- `GameManager` (`Manager/GameManager.cs`) is a lazily created singleton that owns pause/resume (`Time.timeScale`), game-over state, the once-per-run revive flag, and Restart/ReturnToMenu via `SceneLoader`.
 - Enemy/pooling classes have inconsistent typo'd naming inherited from the original code (`BallonEnemies` folder, `OnArrowDestoryed`, `destoryTime`, `OnDestory` instead of `OnDestroy` in a couple of places) — match existing spelling in a file rather than "fixing" it in isolation, since renaming public signal/event types is a cross-file change.

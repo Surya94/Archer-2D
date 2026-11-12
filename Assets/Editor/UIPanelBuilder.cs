@@ -43,6 +43,7 @@ namespace Archer.Editor
         private const int StateSettings = 5;
 
         private const float MenuColumnWidth = 700f;
+        private const float HeaderHeight = 128f;
 
         private const int TransitionFade = 1;
 
@@ -85,24 +86,45 @@ namespace Archer.Editor
             RectTransform root = CreatePanelRoot("GameOverPanel");
             GameOverPanel panel = root.gameObject.AddComponent<GameOverPanel>();
 
-            RectTransform card = CreateCard(root);
+            RectTransform card = CreateCard(root, "OUT OF ARROWS", UIStyle.TitleRed);
 
-            UIStyle.CreateText("Title", card, "GAME OVER", 88f, UIStyle.TitleRed)
-                .gameObject.AddComponent<LayoutElement>().preferredHeight = 120f;
+            TextMeshProUGUI scoreValue = UIStyle.CreateStatRow("ScoreRow", card, "SCORE", FeelAssetBuilder.Icon.Star);
+            TextMeshProUGUI bestValue = UIStyle.CreateStatRow("BestRow", card, "BEST", FeelAssetBuilder.Icon.Trophy);
+            RectTransform scoreRow = (RectTransform)scoreValue.transform.parent;
+            RectTransform bestRow = (RectTransform)bestValue.transform.parent;
 
-            TextMeshProUGUI scoreValue = UIStyle.CreateStatRow("ScoreRow", card, "SCORE");
-            TextMeshProUGUI bestValue = UIStyle.CreateStatRow("BestRow", card, "BEST");
-
-            AddSpacer(card, 16f);
+            // All three buttons share one CanvasGroup, so the panel can hold them inert until
+            // the card has landed.
+            RectTransform buttons = UIStyle.CreateRect("Buttons", card);
+            VerticalLayoutGroup buttonsLayout = buttons.gameObject.AddComponent<VerticalLayoutGroup>();
+            buttonsLayout.padding = new RectOffset(0, 0, 10, 0);
+            buttonsLayout.spacing = 20f;
+            buttonsLayout.childControlWidth = true;
+            buttonsLayout.childControlHeight = true;
+            buttonsLayout.childForceExpandWidth = true;
+            buttonsLayout.childForceExpandHeight = false;
+            CanvasGroup buttonGroup = buttons.gameObject.AddComponent<CanvasGroup>();
 
             TextMeshProUGUI adLabel;
-            Button adButton = UIStyle.CreateButton("WatchAdButton", card, "WATCH AD  +5",
-                UIStyle.Gold, out adLabel, UIStyle.AdButtonHeight);
+            Button adButton = UIStyle.CreateButton("WatchAdButton", buttons, "WATCH AD  +5",
+                UIStyle.Gold, out adLabel, UIStyle.AdButtonHeight, FeelAssetBuilder.Icon.Video);
 
             TextMeshProUGUI ignored;
-            RectTransform buttonRow = CreateButtonRow(card);
-            Button restart = UIStyle.CreateButton("RestartButton", buttonRow, "RESTART", UIStyle.Green, out ignored);
-            Button home = UIStyle.CreateButton("HomeButton", buttonRow, "HOME", UIStyle.Sky, out ignored);
+            RectTransform buttonRow = CreateButtonRow(buttons);
+            Button restart = UIStyle.CreateButton("RestartButton", buttonRow, "RESTART", UIStyle.Green,
+                out ignored, UIStyle.ButtonHeight, FeelAssetBuilder.Icon.Restart);
+            Button home = UIStyle.CreateButton("HomeButton", buttonRow, "HOME", UIStyle.Sky,
+                out ignored, UIStyle.ButtonHeight, FeelAssetBuilder.Icon.Home);
+
+            RectTransform ribbon = CreateNewBestRibbon(card);
+
+            // On the panel root, not the card: the pieces must not be scaled by the card's
+            // pop-in, and they fly well outside its bounds.
+            RectTransform confettiRt = UIStyle.Centre(UIStyle.CreateRect("Confetti", root), 0f, 0f);
+            confettiRt.anchoredPosition = new Vector2(0f, 200f);
+            UIConfetti confetti = confettiRt.gameObject.AddComponent<UIConfetti>();
+
+            PanelIntro intro = AddIntro(root, card, scoreRow, bestRow, buttons);
 
             SerializedObject so = new SerializedObject(panel);
             ApplyBasePanelFields(so, root, StateGameOver);
@@ -113,6 +135,10 @@ namespace Archer.Editor
             so.FindProperty("restartButton").objectReferenceValue = restart;
             so.FindProperty("homeButton").objectReferenceValue = home;
             so.FindProperty("reviveArrowCount").intValue = 5;
+            so.FindProperty("intro").objectReferenceValue = intro;
+            so.FindProperty("buttonGroup").objectReferenceValue = buttonGroup;
+            so.FindProperty("newBestRibbon").objectReferenceValue = ribbon;
+            so.FindProperty("confetti").objectReferenceValue = confetti;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             SaveAndDiscard(root.gameObject, GameOverPrefabPath);
@@ -125,20 +151,22 @@ namespace Archer.Editor
             RectTransform root = CreatePanelRoot("PauseMenuPanel");
             PauseMenuPanel panel = root.gameObject.AddComponent<PauseMenuPanel>();
 
-            RectTransform card = CreateCard(root);
-
-            UIStyle.CreateText("Title", card, "PAUSED", 88f, UIStyle.ValueSlate)
-                .gameObject.AddComponent<LayoutElement>().preferredHeight = 120f;
-
-            AddSpacer(card, 8f);
+            RectTransform card = CreateCard(root, "PAUSED", UIStyle.ValueSlate);
 
             TextMeshProUGUI ignored;
-            Button resume = UIStyle.CreateButton("ResumeButton", card, "RESUME", UIStyle.Green, out ignored, UIStyle.AdButtonHeight);
-            Button settings = UIStyle.CreateButton("SettingsButton", card, "SETTINGS", UIStyle.Gold, out ignored);
+            Button resume = UIStyle.CreateButton("ResumeButton", card, "RESUME", UIStyle.Green,
+                out ignored, UIStyle.AdButtonHeight, FeelAssetBuilder.Icon.Play);
+            Button settings = UIStyle.CreateButton("SettingsButton", card, "SETTINGS", UIStyle.Gold,
+                out ignored, UIStyle.ButtonHeight, FeelAssetBuilder.Icon.Settings);
 
             RectTransform buttonRow = CreateButtonRow(card);
-            Button restart = UIStyle.CreateButton("RestartButton", buttonRow, "RESTART", UIStyle.Sky, out ignored);
-            Button home = UIStyle.CreateButton("HomeButton", buttonRow, "HOME", UIStyle.Sky, out ignored);
+            Button restart = UIStyle.CreateButton("RestartButton", buttonRow, "RESTART", UIStyle.Sky,
+                out ignored, UIStyle.ButtonHeight, FeelAssetBuilder.Icon.Restart);
+            Button home = UIStyle.CreateButton("HomeButton", buttonRow, "HOME", UIStyle.Sky,
+                out ignored, UIStyle.ButtonHeight, FeelAssetBuilder.Icon.Home);
+
+            PanelIntro intro = AddIntro(root, card, (RectTransform)resume.transform,
+                (RectTransform)settings.transform, buttonRow);
 
             SerializedObject so = new SerializedObject(panel);
             ApplyBasePanelFields(so, root, StatePauseMenu);
@@ -146,6 +174,7 @@ namespace Archer.Editor
             so.FindProperty("settingsButton").objectReferenceValue = settings;
             so.FindProperty("restartButton").objectReferenceValue = restart;
             so.FindProperty("homeButton").objectReferenceValue = home;
+            so.FindProperty("intro").objectReferenceValue = intro;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             SaveAndDiscard(root.gameObject, PausePrefabPath);
@@ -180,18 +209,23 @@ namespace Archer.Editor
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            TextMeshProUGUI title = UIStyle.CreateText("Title", column, "ARCHER", 130f, UIStyle.TitleRed);
-            title.fontStyle = FontStyles.Bold;
-            title.gameObject.AddComponent<LayoutElement>().preferredHeight = 150f;
+            // The title is drawn straight over the scenery, so it carries its own outline.
+            TextMeshProUGUI title = UIStyle.CreateText("Title", column, "ARCHER", 176f, UIStyle.TitleRed);
+            title.textWrappingMode = TextWrappingModes.NoWrap;
+            UIStyle.UseOutline(title);
+            title.gameObject.AddComponent<LayoutElement>().preferredHeight = 180f;
 
-            TextMeshProUGUI best = CreateBestPill(column);
+            RectTransform bestPill;
+            TextMeshProUGUI best = CreateBestPill(column, out bestPill);
 
-            AddSpacer(column, 12f);
+            AddSpacer(column, 6f);
 
             TextMeshProUGUI label;
-            Button play = UIStyle.CreateButton("PlayButton", column, "PLAY", UIStyle.Green, out label, UIStyle.AdButtonHeight);
-            label.fontSize = 60f;
-            Button settings = UIStyle.CreateButton("SettingsButton", column, "SETTINGS", UIStyle.Gold, out label);
+            Button play = UIStyle.CreateButton("PlayButton", column, "PLAY", UIStyle.Green, out label,
+                160f, FeelAssetBuilder.Icon.Play);
+            label.fontSize = 68f;
+            Button settings = UIStyle.CreateButton("SettingsButton", column, "SETTINGS", UIStyle.Gold,
+                out label, UIStyle.ButtonHeight, FeelAssetBuilder.Icon.Settings);
 
             RectTransform soonRow = CreateButtonRow(column);
             soonRow.name = "ComingSoonRow";
@@ -203,9 +237,17 @@ namespace Archer.Editor
             shop.interactable = false;
             removeAds.interactable = false;
 
-            Button quit = UIStyle.CreateButton("QuitButton", column, "QUIT", UIStyle.Sky, out label);
+            Button quit = UIStyle.CreateButton("QuitButton", column, "QUIT", UIStyle.Sky, out label,
+                UIStyle.ButtonHeight, FeelAssetBuilder.Icon.Exit, UIButtonFeel.ClickSound.Back);
+
+            // No card on this screen: the rows pop in over the scenery. The title is animated by
+            // MainMenuPanel itself, because it keeps moving afterwards.
+            PanelIntro intro = AddIntro(root, null, bestPill, (RectTransform)play.transform,
+                (RectTransform)settings.transform, soonRow, (RectTransform)quit.transform);
 
             SerializedObject so = new SerializedObject(panel);
+            so.FindProperty("title").objectReferenceValue = (RectTransform)title.transform;
+            so.FindProperty("intro").objectReferenceValue = intro;
             ApplyBasePanelFields(so, root, StateMainMenu);
             // The menu is the scene's starting state, so it must NOT hide itself on Awake.
             so.FindProperty("hideOnStart").boolValue = false;
@@ -222,9 +264,9 @@ namespace Archer.Editor
             SaveAndDiscard(go, MainMenuPrefabPath);
         }
 
-        private static TextMeshProUGUI CreateBestPill(RectTransform parent)
+        private static TextMeshProUGUI CreateBestPill(RectTransform parent, out RectTransform pill)
         {
-            RectTransform pill = UIStyle.CreateRect("BestPill", parent);
+            pill = UIStyle.CreateRect("BestPill", parent);
 
             Image image = pill.gameObject.AddComponent<Image>();
             image.sprite = UIStyle.RoundedSprite;
@@ -233,46 +275,170 @@ namespace Archer.Editor
             image.raycastTarget = false;
 
             Shadow shadow = pill.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = UIStyle.CardShadow;
-            shadow.effectDistance = new Vector2(0f, -6f);
+            shadow.effectColor = new Color32(0x4A, 0x3B, 0x2A, 0xB4);
+            shadow.effectDistance = new Vector2(0f, -8f);
 
-            pill.gameObject.AddComponent<LayoutElement>().preferredHeight = 84f;
+            pill.gameObject.AddComponent<LayoutElement>().preferredHeight = 96f;
 
-            TextMeshProUGUI text = UIStyle.CreateText("Value", pill, "BEST  0", 46f, UIStyle.ValueSlate);
-            UIStyle.Stretch((RectTransform)text.transform);
+            HorizontalLayoutGroup row = pill.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.spacing = 14f;
+            row.childAlignment = TextAnchor.MiddleCenter;
+            row.childControlWidth = true;
+            row.childControlHeight = true;
+            row.childForceExpandWidth = false;
+            row.childForceExpandHeight = false;
+
+            TextMeshProUGUI icon = UIStyle.CreateIcon("Icon", pill, FeelAssetBuilder.Icon.Trophy, 58f, UIStyle.Gold);
+            LayoutElement iconLayout = icon.gameObject.AddComponent<LayoutElement>();
+            iconLayout.preferredWidth = 58f;
+            iconLayout.preferredHeight = 58f;
+
+            TextMeshProUGUI text = UIStyle.CreateText("Value", pill, "BEST  0", 52f, UIStyle.ValueSlate);
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             return text;
+        }
+
+        /// <summary>
+        /// The NEW BEST stamp: pinned over the card's top-right corner and outside its layout,
+        /// hidden until GameOverPanel slams it on.
+        /// </summary>
+        private static RectTransform CreateNewBestRibbon(RectTransform card)
+        {
+            RectTransform ribbon = UIStyle.CreateRect("NewBestRibbon", card);
+            ribbon.anchorMin = new Vector2(1f, 1f);
+            ribbon.anchorMax = new Vector2(1f, 1f);
+            ribbon.pivot = new Vector2(0.5f, 0.5f);
+            // Hangs off the corner, mostly outside the card, so it never covers the score.
+            ribbon.anchoredPosition = new Vector2(-30f, 14f);
+            ribbon.sizeDelta = new Vector2(340f, 96f);
+            ribbon.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+
+            Image image = ribbon.gameObject.AddComponent<Image>();
+            image.sprite = UIStyle.PillSprite;
+            image.type = Image.Type.Sliced;
+            image.color = UIStyle.Gold;
+            image.raycastTarget = false;
+
+            Shadow shadow = ribbon.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color32(0x8A, 0x5A, 0x10, 0xFF);
+            shadow.effectDistance = new Vector2(0f, -8f);
+
+            TextMeshProUGUI text = UIStyle.CreateText("Label", ribbon, "NEW BEST!", 54f, UIStyle.ButtonInk);
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            UIStyle.Stretch((RectTransform)text.transform);
+
+            ribbon.gameObject.SetActive(false);
+            return ribbon;
+        }
+
+        private static PanelIntro AddIntro(RectTransform panelRoot, RectTransform card, params RectTransform[] items)
+        {
+            PanelIntro intro = panelRoot.gameObject.AddComponent<PanelIntro>();
+            intro.card = card;
+            intro.items = items;
+            return intro;
         }
 
         // ------------------------------------------------------------------- Settings
 
         /// <summary>
-        /// Shell only, matching SettingsPanel.cs: real audio controls arrive once SoundManger's
-        /// stubbed setters are implemented (PLAN.md Stages 3-4).
+        /// Sound / Music / Vibration switches. Each row is one big button - the whole row
+        /// toggles, not just the ON/OFF chip - bound to GameSettings by SettingsPanel.
         /// </summary>
         private static void BuildSettingsPrefab()
         {
             RectTransform root = CreatePanelRoot("SettingsPanel");
             SettingsPanel panel = root.gameObject.AddComponent<SettingsPanel>();
 
-            RectTransform card = CreateCard(root);
-
-            UIStyle.CreateText("Title", card, "SETTINGS", 88f, UIStyle.ValueSlate)
-                .gameObject.AddComponent<LayoutElement>().preferredHeight = 120f;
-
-            UIStyle.CreateText("Body", card, "Audio options coming soon", 42f, UIStyle.LabelBrown)
-                .gameObject.AddComponent<LayoutElement>().preferredHeight = 72f;
-
-            AddSpacer(card, 8f);
-
-            TextMeshProUGUI ignored;
-            Button back = UIStyle.CreateButton("BackButton", card, "BACK", UIStyle.Sky, out ignored);
+            RectTransform card = CreateCard(root, "SETTINGS", UIStyle.ValueSlate);
 
             SerializedObject so = new SerializedObject(panel);
             ApplyBasePanelFields(so, root, StateSettings);
+
+            RectTransform sound = CreateToggleRow(card, "SoundRow", "SOUND", so.FindProperty("soundRow"),
+                FeelAssetBuilder.Icon.SoundOn, FeelAssetBuilder.Icon.SoundOff);
+            RectTransform music = CreateToggleRow(card, "MusicRow", "MUSIC", so.FindProperty("musicRow"),
+                FeelAssetBuilder.Icon.MusicOn, FeelAssetBuilder.Icon.MusicOff);
+            RectTransform vibration = CreateToggleRow(card, "VibrationRow", "VIBRATION", so.FindProperty("vibrationRow"),
+                FeelAssetBuilder.Icon.Vibration, FeelAssetBuilder.Icon.Vibration);
+
+            AddSpacer(card, 4f);
+
+            TextMeshProUGUI ignored;
+            Button back = UIStyle.CreateButton("BackButton", card, "BACK", UIStyle.Sky, out ignored,
+                UIStyle.ButtonHeight, FeelAssetBuilder.Icon.Back, UIButtonFeel.ClickSound.Back);
+
+            PanelIntro intro = AddIntro(root, card, sound, music, vibration, (RectTransform)back.transform);
+
             so.FindProperty("backButton").objectReferenceValue = back;
+            so.FindProperty("intro").objectReferenceValue = intro;
+            so.FindProperty("onColour").colorValue = UIStyle.Green;
+            so.FindProperty("offColour").colorValue = UIStyle.Disabled;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             SaveAndDiscard(root.gameObject, SettingsPrefabPath);
+        }
+
+        private static RectTransform CreateToggleRow(RectTransform card, string name, string label,
+            SerializedProperty row, string onGlyph, string offGlyph)
+        {
+            RectTransform rt = UIStyle.CreateRect(name, card);
+            rt.gameObject.AddComponent<LayoutElement>().preferredHeight = 112f;
+
+            Image well = UIStyle.AddWell(rt);
+            well.color = UIStyle.CardEdge;
+            // The whole row is the touch target.
+            well.raycastTarget = true;
+
+            HorizontalLayoutGroup group = rt.gameObject.AddComponent<HorizontalLayoutGroup>();
+            group.padding = new RectOffset(34, 22, 0, 0);
+            group.spacing = 22f;
+            group.childAlignment = TextAnchor.MiddleLeft;
+            group.childControlWidth = true;
+            group.childControlHeight = true;
+            group.childForceExpandWidth = false;
+            group.childForceExpandHeight = false;
+
+            TextMeshProUGUI icon = UIStyle.CreateIcon("Icon", rt, onGlyph, 64f, UIStyle.ValueSlate);
+            LayoutElement iconLayout = icon.gameObject.AddComponent<LayoutElement>();
+            iconLayout.preferredWidth = 64f;
+            iconLayout.preferredHeight = 64f;
+
+            TextMeshProUGUI caption = UIStyle.CreateText("Label", rt, label, 50f, UIStyle.ValueSlate,
+                TextAlignmentOptions.Left);
+            caption.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
+
+            RectTransform chip = UIStyle.CreateRect("State", rt);
+            Image chipImage = chip.gameObject.AddComponent<Image>();
+            chipImage.sprite = UIStyle.PillSprite;
+            chipImage.type = Image.Type.Sliced;
+            chipImage.color = UIStyle.Green;
+            chipImage.raycastTarget = false;
+            LayoutElement chipLayout = chip.gameObject.AddComponent<LayoutElement>();
+            chipLayout.preferredWidth = 170f;
+            chipLayout.preferredHeight = 76f;
+
+            TextMeshProUGUI state = UIStyle.CreateText("Value", chip, "ON", 46f, UIStyle.ButtonInk);
+            UIStyle.Stretch((RectTransform)state.transform);
+
+            Button button = rt.gameObject.AddComponent<Button>();
+            button.targetGraphic = well;
+            // The chip carries the state; tinting the well as well would fight its colour.
+            button.transition = Selectable.Transition.None;
+            Navigation navigation = button.navigation;
+            navigation.mode = Navigation.Mode.None;
+            button.navigation = navigation;
+            // No face to sink (content left empty) - this just supplies the switch sound and haptic.
+            rt.gameObject.AddComponent<UIButtonFeel>().sound = UIButtonFeel.ClickSound.Toggle;
+
+            row.FindPropertyRelative("root").objectReferenceValue = rt.gameObject;
+            row.FindPropertyRelative("button").objectReferenceValue = button;
+            row.FindPropertyRelative("icon").objectReferenceValue = icon;
+            row.FindPropertyRelative("state").objectReferenceValue = state;
+            row.FindPropertyRelative("stateBackground").objectReferenceValue = chipImage;
+            row.FindPropertyRelative("onGlyph").stringValue = onGlyph;
+            row.FindPropertyRelative("offGlyph").stringValue = offGlyph;
+            return rt;
         }
 
         // ------------------------------------------------------------- Loading screen
@@ -357,9 +523,10 @@ namespace Archer.Editor
             ContentSizeFitter fitter = column.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            TextMeshProUGUI title = UIStyle.CreateText("Title", column, "ARCHER", 130f, UIStyle.TitleRed);
-            title.fontStyle = FontStyles.Bold;
-            title.gameObject.AddComponent<LayoutElement>().preferredHeight = 150f;
+            TextMeshProUGUI title = UIStyle.CreateText("Title", column, "ARCHER", 176f, UIStyle.TitleRed);
+            title.textWrappingMode = TextWrappingModes.NoWrap;
+            UIStyle.UseOutline(title);
+            title.gameObject.AddComponent<LayoutElement>().preferredHeight = 180f;
 
             RectTransform track = UIStyle.CreateRect("ProgressTrack", column);
             Image trackImage = track.gameObject.AddComponent<Image>();
@@ -386,8 +553,9 @@ namespace Archer.Editor
             fillImage.color = UIStyle.Green;
             fillImage.raycastTarget = false;
 
-            UIStyle.CreateText("Status", column, "LOADING...", 44f, UIStyle.ValueSlate)
-                .gameObject.AddComponent<LayoutElement>().preferredHeight = 60f;
+            TextMeshProUGUI status = UIStyle.CreateText("Status", column, "LOADING...", 48f, UIStyle.OnDark);
+            UIStyle.UseShadow(status);
+            status.gameObject.AddComponent<LayoutElement>().preferredHeight = 64f;
 
             SerializedObject so = new SerializedObject(view);
             so.FindProperty("canvasGroup").objectReferenceValue = group;
@@ -424,22 +592,43 @@ namespace Archer.Editor
         /// card grows with its content instead of relying on a hardcoded height that would
         /// clip or leave a gap when labels change.
         /// </summary>
-        private static RectTransform CreateCard(RectTransform parent)
+        private static RectTransform CreateCard(RectTransform parent, string title, Color headerColour)
         {
             RectTransform card = UIStyle.Centre(UIStyle.CreateRect("Window", parent), UIStyle.CardWidth, 0f);
 
-            Image image = card.gameObject.AddComponent<Image>();
-            image.sprite = UIStyle.RoundedSprite;
-            image.type = Image.Type.Sliced;
-            image.color = UIStyle.Card;
+            // Soft shadow + cream fill, as children that sit behind the content. The fill takes
+            // raycasts so taps on the card's padding don't fall through to the dimmer.
+            UIStyle.AddSurface(card, UIStyle.Card, 14f, true);
 
-            Shadow shadow = card.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = UIStyle.CardShadow;
-            shadow.effectDistance = new Vector2(0f, -10f);
+            // A coloured title plate inset into the top of the card. Outside the layout group:
+            // the group's top padding reserves its space.
+            RectTransform header = UIStyle.CreateRect("Header", card);
+            header.anchorMin = new Vector2(0f, 1f);
+            header.anchorMax = new Vector2(1f, 1f);
+            header.pivot = new Vector2(0.5f, 1f);
+            header.offsetMin = new Vector2(20f, -HeaderHeight - 20f);
+            header.offsetMax = new Vector2(-20f, -20f);
+            header.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+
+            Image headerImage = header.gameObject.AddComponent<Image>();
+            headerImage.sprite = UIStyle.RoundedSprite;
+            headerImage.type = Image.Type.Sliced;
+            headerImage.color = headerColour;
+            headerImage.raycastTarget = false;
+
+            TextMeshProUGUI titleText = UIStyle.CreateText("Title", header, title, 78f, UIStyle.OnDark);
+            titleText.textWrappingMode = TextWrappingModes.NoWrap;
+            titleText.enableAutoSizing = true;
+            titleText.fontSizeMin = 48f;
+            titleText.fontSizeMax = 78f;
+            UIStyle.UseShadow(titleText);
+            RectTransform titleRt = UIStyle.Stretch((RectTransform)titleText.transform);
+            titleRt.offsetMin = new Vector2(24f, 0f);
+            titleRt.offsetMax = new Vector2(-24f, 0f);
 
             VerticalLayoutGroup group = card.gameObject.AddComponent<VerticalLayoutGroup>();
-            group.padding = new RectOffset(48, 48, 44, 44);
-            group.spacing = 22f;
+            group.padding = new RectOffset(48, 48, (int)HeaderHeight + 52, 48);
+            group.spacing = 20f;
             group.childControlWidth = true;
             group.childControlHeight = true;
             group.childForceExpandWidth = true;
@@ -515,6 +704,8 @@ namespace Archer.Editor
             RectTransform uiRoot = CreateUiCanvas(hudCanvas);
             InstantiatePanel(GameOverPrefabPath, uiRoot);
             InstantiatePanel(PausePrefabPath, uiRoot);
+            // Pause -> SETTINGS needs a panel registered for the Settings state in this scene too.
+            InstantiatePanel(SettingsPrefabPath, uiRoot);
             CreateUiManager(StateGameplay);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -533,16 +724,28 @@ namespace Archer.Editor
             // The prototype canvas: plain Play/Quit buttons wired by Inspector onClick bindings
             // to MainMenuController. Used once as the template for the new canvas (camera,
             // render mode, scaler) so both scenes scale identically, then removed.
-            GameObject protoCanvasGo = FindInScene(scene, "Canvas");
-            Canvas protoCanvas = protoCanvasGo != null ? protoCanvasGo.GetComponent<Canvas>() : null;
-            if (protoCanvas == null)
+            //
+            // On a re-run the prototype is long gone and the UI Canvas already exists; keep it
+            // and just swap the panel instances for the freshly built prefabs.
+            RectTransform uiRoot;
+            GameObject uiCanvasGo = FindInScene(scene, "UI Canvas");
+            if (uiCanvasGo != null)
             {
-                Debug.LogError("[UIPanelBuilder] Prototype 'Canvas' not found in MainMenu - aborting.");
-                return;
+                uiRoot = (RectTransform)uiCanvasGo.transform;
             }
+            else
+            {
+                GameObject protoCanvasGo = FindInScene(scene, "Canvas");
+                Canvas protoCanvas = protoCanvasGo != null ? protoCanvasGo.GetComponent<Canvas>() : null;
+                if (protoCanvas == null)
+                {
+                    Debug.LogError("[UIPanelBuilder] Neither 'UI Canvas' nor the prototype 'Canvas' found in MainMenu - aborting.");
+                    return;
+                }
 
-            RectTransform uiRoot = CreateUiCanvas(protoCanvas);
-            Object.DestroyImmediate(protoCanvasGo);
+                uiRoot = CreateUiCanvas(protoCanvas);
+                Object.DestroyImmediate(protoCanvasGo);
+            }
 
             InstantiatePanel(MainMenuPrefabPath, uiRoot);
             InstantiatePanel(SettingsPrefabPath, uiRoot);
@@ -590,11 +793,18 @@ namespace Archer.Editor
 
         private static Button CreatePauseButton(RectTransform hudRoot)
         {
-            Transform existing = hudRoot.Find("PauseButton");
-            if (existing != null) Object.DestroyImmediate(existing.gameObject);
+            // HUDBuilder moves the button into the HUD's safe-area container; look in both places
+            // and rebuild it where the rest of the corner HUD lives.
+            Transform safeArea = hudRoot.Find(HUDBuilder.SafeAreaName);
+            foreach (Transform parent in new[] { hudRoot, safeArea })
+            {
+                Transform existing = parent != null ? parent.Find("PauseButton") : null;
+                if (existing != null) Object.DestroyImmediate(existing.gameObject);
+            }
 
             TextMeshProUGUI ignored;
-            Button button = UIStyle.CreateButton("PauseButton", hudRoot, "II", UIStyle.Sky, out ignored);
+            Button button = UIStyle.CreateButton("PauseButton", safeArea != null ? safeArea : hudRoot,
+                "", UIStyle.Sky, out ignored, UIStyle.ButtonHeight, FeelAssetBuilder.Icon.Pause);
             RectTransform rt = (RectTransform)button.transform;
 
             // Pinned to the top-right corner: anchor and pivot both at (1,1) so the inset stays
@@ -603,7 +813,7 @@ namespace Archer.Editor
             rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(1f, 1f);
             rt.anchoredPosition = new Vector2(-40f, -40f);
-            rt.sizeDelta = new Vector2(120f, 120f);
+            rt.sizeDelta = new Vector2(124f, 124f);
 
             // The LayoutElement the factory adds is meaningless outside a layout group.
             Object.DestroyImmediate(button.GetComponent<LayoutElement>());

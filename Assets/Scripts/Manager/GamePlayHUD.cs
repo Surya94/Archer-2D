@@ -56,9 +56,10 @@ public class GamePlayHUD : MonoBehaviour
 
         displayedScore = scoreManager.CurrentScore;
         shownArrows = scoreManager.arrowCount;
-        // Captured once: OnGameOver promotes BestScore mid-run, and a revive would then
-        // compare against this run's own score.
-        bestAtRunStart = scoreManager.BestScore;
+        // The run-start snapshot, not the live value: OnGameOver promotes BestScore mid-run,
+        // and a revive would then compare against this run's own score. ScoreManager owns the
+        // snapshot so the Game Over screen judges "new best" against the same number.
+        bestAtRunStart = scoreManager.BestAtRunStart;
 
         SetScoreText(displayedScore);
         SetBestText();

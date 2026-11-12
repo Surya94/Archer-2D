@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Archer.Scripts.View.Abstract;
+using Archer.Scripts.View.Interface;
 using Archer.Scripts.View.Manager;
 using Archer.Scripts.Manager;
 
@@ -12,6 +13,7 @@ namespace Archer.Scripts.View.Panels
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button restartButton;
         [SerializeField] private Button homeButton;
+        [SerializeField] private PanelIntro intro;
 
         public override void Initialize()
         {
@@ -43,6 +45,7 @@ namespace Archer.Scripts.View.Panels
         public override void OnStateEnter()
         {
             GameManager.Instance.Pause();
+            if (intro != null) intro.Play();
         }
 
         // Deliberately no OnStateExit -> Resume(). Leaving this panel for Settings would
@@ -50,28 +53,14 @@ namespace Archer.Scripts.View.Panels
         // OnStateEnter instead, so every route back into gameplay unpauses exactly once -
         // the buttons here, GoBack(), and the Escape key handler alike.
 
-        private void OnResumeClicked()
-        {
-            SoundManger.Instance.PlayButtonClickSound();
-            UIManager.Instance.GoBack();
-        }
+        // Click sounds and haptics come from UIButtonFeel on each button.
+        private void OnResumeClicked() => UIManager.Instance.GoBack();
 
-        private void OnSettingsClicked()
-        {
-            SoundManger.Instance.PlayButtonClickSound();
-            UIManager.Instance.ShowSettings();
-        }
+        // Fade, with history, so BACK on the settings screen returns here.
+        private void OnSettingsClicked() =>
+            UIManager.Instance.ChangeState(UIState.Settings, UITransitionType.Fade, true);
 
-        private void OnRestartClicked()
-        {
-            SoundManger.Instance.PlayButtonClickSound();
-            GameManager.Instance.Restart();
-        }
-
-        private void OnHomeClicked()
-        {
-            SoundManger.Instance.PlayButtonClickSound();
-            GameManager.Instance.ReturnToMenu();
-        }
+        private void OnRestartClicked() => GameManager.Instance.Restart();
+        private void OnHomeClicked() => GameManager.Instance.ReturnToMenu();
     }
 }

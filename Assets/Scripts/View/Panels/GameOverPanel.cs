@@ -1,3 +1,5 @@
+using System.Globalization;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -6,6 +8,7 @@ using Archer.Scripts.View.Interface;
 using Archer.Scripts.View.Manager;
 using Archer.Scripts.Manager;
 using Archer.Scripts.Manager.Ads;
+using Archer.Scripts.Utility;
 
 namespace Archer.Scripts.View.Panels
 {
@@ -25,8 +28,18 @@ namespace Archer.Scripts.View.Panels
         [Tooltip("Arrows granted by the rewarded ad. Allowed once per run.")]
         [SerializeField] private int reviveArrowCount = 5;
 
+        [Header("Celebration")]
+        [SerializeField] private PanelIntro intro;
+        [Tooltip("Blocks the buttons until the card has landed, so a tap meant for the game can't hit RESTART.")]
+        [SerializeField] private CanvasGroup buttonGroup;
+        [SerializeField] private RectTransform newBestRibbon;
+        [SerializeField] private UIConfetti confetti;
+        [SerializeField] private float countUpDuration = 0.8f;
+
         private ScoreManager scoreManager;
         private bool isShowingAd;
+        private Sequence sequence;
+        private Tween adPulse;
 
         private ScoreManager Score => scoreManager ??= DependencyResolver.Resolve<ScoreManager>();
 
@@ -61,6 +74,7 @@ namespace Archer.Scripts.View.Panels
         public override void Cleanup()
         {
             SignalManager.Instance?.RemoveObserver<OnGameOver>(HandleGameOver);
+            StopAnimations();
         }
 
         private void HandleGameOver(OnGameOver signalData)
@@ -74,21 +88,129 @@ namespace Archer.Scripts.View.Panels
         public override void OnStateEnter()
         {
             isShowingAd = false;
-            RefreshScores();
             RefreshAdButton();
+            PlayEntrance();
         }
 
-        private void RefreshScores()
+        public override void OnStateExit()
         {
-            // ScoreManager promotes CurrentScore into BestScore on the OnGameOver dispatch,
-            // which runs synchronously before UIManager processes this queued transition, so
-            // both values are already final by the time we read them here.
-            if (scoreText != null)
-                scoreText.text = Score.CurrentScore.ToString();
-
-            if (bestText != null)
-                bestText.text = Score.BestScore.ToString();
+            StopAnimations();
         }
+
+        // ------------------------------------------------------------------ Entrance
+
+        /// <summary>
+        /// Card pops in, the score counts up from zero, and a run that beat the record gets the
+        /// NEW BEST ribbon, confetti and a fanfare. Unscaled time: the game is paused here.
+        ///
+        /// ScoreManager promotes CurrentScore into BestScore on the OnGameOver dispatch, which
+        /// runs synchronously before UIManager processes this queued transition, so both values
+        /// are already final by the time they are read.
+        /// </summary>
+        private void PlayEntrance()
+        {
+            StopAnimations();
+
+            int finalScore = Score.CurrentScore;
+            bool newBest = Score.IsNewBest;
+
+            SetScore(0);
+            if (bestText != null)
+                bestText.text = Format(newBest ? Score.BestAtRunStart : Score.BestScore);
+            if (newBestRibbon != null) newBestRibbon.gameObject.SetActive(false);
+            if (buttonGroup != null) buttonGroup.interactable = false;
+
+            float introTime = 0.3f;
+            if (intro != null)
+            {
+                intro.Play();
+                introTime = intro.TotalDuration;
+            }
+
+            if (!newBest && SoundManger.Instance != null)
+                SoundManger.Instance.PlayGameOverSound();
+
+            sequence = DOTween.Sequence().SetUpdate(true).SetLink(gameObject);
+            sequence.InsertCallback(Mathf.Min(introTime, 0.45f), () =>
+            {
+                if (buttonGroup != null) buttonGroup.interactable = true;
+                StartAdPulse();
+            });
+
+            int shown = 0;
+            sequence.Insert(0.25f, DOTween.To(() => shown, value => { shown = value; SetScore(value); },
+                    finalScore, finalScore > 0 ? countUpDuration : 0f)
+                .SetEase(Ease.OutCubic));
+
+            if (newBest)
+                sequence.InsertCallback(0.25f + countUpDuration, () => Celebrate(finalScore));
+        }
+
+        private void Celebrate(int finalScore)
+        {
+            if (bestText != null)
+            {
+                bestText.text = Format(finalScore);
+                bestText.rectTransform.DOPunchScale(Vector3.one * 0.35f, 0.35f, 7, 0.8f)
+                    .SetUpdate(true).SetLink(gameObject);
+            }
+
+            if (scoreText != null)
+            {
+                scoreText.rectTransform.DOPunchScale(Vector3.one * 0.25f, 0.35f, 7, 0.8f)
+                    .SetUpdate(true).SetLink(gameObject);
+            }
+
+            if (newBestRibbon != null)
+            {
+                // Stamped on: starts oversized and tilted, lands with a bounce.
+                newBestRibbon.gameObject.SetActive(true);
+                newBestRibbon.localScale = Vector3.one * 2.4f;
+                newBestRibbon.localRotation = Quaternion.Euler(0f, 0f, 14f);
+                DOTween.Sequence().SetUpdate(true).SetLink(gameObject)
+                    .Append(newBestRibbon.DOScale(1f, 0.28f).SetEase(Ease.OutBack, 2f))
+                    .Join(newBestRibbon.DOLocalRotate(new Vector3(0f, 0f, -6f), 0.28f).SetEase(Ease.OutQuad));
+            }
+
+            if (confetti != null) confetti.Burst();
+            if (SoundManger.Instance != null) SoundManger.Instance.PlayNewBestSound();
+            Haptics.Success();
+        }
+
+        private void SetScore(int value)
+        {
+            if (scoreText != null) scoreText.text = Format(value);
+        }
+
+        private static string Format(int value) => value.ToString("N0", CultureInfo.InvariantCulture);
+
+        /// <summary>A slow breathing pulse on WATCH AD while it can still be used.</summary>
+        private void StartAdPulse()
+        {
+            adPulse?.Kill();
+            if (watchAdButton == null) return;
+
+            watchAdButton.transform.localScale = Vector3.one;
+            if (!watchAdButton.interactable) return;
+
+            adPulse = watchAdButton.transform.DOScale(1.035f, 0.7f)
+                .SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo)
+                .SetUpdate(true).SetLink(gameObject);
+        }
+
+        private void StopAnimations()
+        {
+            sequence?.Kill();
+            sequence = null;
+            adPulse?.Kill();
+            adPulse = null;
+
+            if (watchAdButton != null) watchAdButton.transform.localScale = Vector3.one;
+            if (buttonGroup != null) buttonGroup.interactable = true;
+            if (confetti != null) confetti.Stop();
+        }
+
+        // ------------------------------------------------------------------ Ad / buttons
 
         private void RefreshAdButton()
         {
@@ -112,11 +234,12 @@ namespace Archer.Scripts.View.Panels
             if (isShowingAd || GameManager.Instance.HasUsedRevive) return;
 
             isShowingAd = true;
-            SoundManger.Instance.PlayButtonClickSound();
 
             // Lock the button for the whole round-trip: the reward callback can land a frame
             // or many frames later, and a second tap in between would burn the revive twice.
             watchAdButton.interactable = false;
+            adPulse?.Kill();
+            watchAdButton.transform.localScale = Vector3.one;
             if (watchAdLabel != null)
                 watchAdLabel.text = "LOADING...";
 
@@ -142,18 +265,11 @@ namespace Archer.Scripts.View.Panels
             // No reward: the revive is not consumed, so let the player try again.
             isShowingAd = false;
             RefreshAdButton();
+            StartAdPulse();
         }
 
-        private void OnRestartClicked()
-        {
-            SoundManger.Instance.PlayButtonClickSound();
-            GameManager.Instance.Restart();
-        }
-
-        private void OnHomeClicked()
-        {
-            SoundManger.Instance.PlayButtonClickSound();
-            GameManager.Instance.ReturnToMenu();
-        }
+        // Click sound and haptic come from UIButtonFeel on each button.
+        private void OnRestartClicked() => GameManager.Instance.Restart();
+        private void OnHomeClicked() => GameManager.Instance.ReturnToMenu();
     }
 }

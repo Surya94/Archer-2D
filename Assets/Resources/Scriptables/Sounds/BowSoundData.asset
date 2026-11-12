@@ -15,5 +15,20 @@ MonoBehaviour:
   fireSound: {fileID: 8300000, guid: 6f9c2888ac220834697181bfc7a0147f, type: 3}
   loadSound: {fileID: 8300000, guid: 166f6b8519945fa4582c9af4144e1aa6, type: 3}
   hitSound: {fileID: 8300000, guid: 047022a17434f674592c17ebe4853c89, type: 3}
+  popSound: {fileID: 8300000, guid: 92414533c410ef24e8a9c6c12b2f05f1, type: 3}
+  bigPopSound: {fileID: 8300000, guid: 205a4ee8072030648b22e96269f8d8dd, type: 3}
+  comboStepSound: {fileID: 8300000, guid: 4f021d69cf049a34fbca14935e4df356, type: 3}
+  arrowGainSound: {fileID: 8300000, guid: ed52deb04c4fa2540a2af830b6098d56, type: 3}
+  missSound: {fileID: 8300000, guid: 2591a8cf47b5fe646ba05e27c9cc84d7, type: 3}
   freezeSound: {fileID: 8300000, guid: 1405c4368e15c074880f5f6ceef9f532, type: 3}
   thawSound: {fileID: 8300000, guid: 1ce651611a380934eab663743bf5915f, type: 3}
+  bonusCollectSound: {fileID: 8300000, guid: 4f155934be15ac942bb6acf2904b1453, type: 3}
+  lightningZapSound: {fileID: 8300000, guid: 078e784b49937a949b368907b24d700b, type: 3}
+  shurikenSound: {fileID: 8300000, guid: 03c3361e7bb89494e99262472ed55454, type: 3}
+  shurikenHitSound: {fileID: 8300000, guid: 0e5d8386f0e10754292fae04c9accd2f, type: 3}
+  uiClickSound: {fileID: 8300000, guid: d7e974de0e54f934eb8abed945a3fc6f, type: 3}
+  uiBackSound: {fileID: 8300000, guid: 0eba619503e6497489cde98efb7cdf2b, type: 3}
+  uiToggleSound: {fileID: 8300000, guid: 1caafe66ece39c5459126aaa802bd4e5, type: 3}
+  gameOverSound: {fileID: 8300000, guid: 5f27b5957554064438d0d1fafbb6cee8, type: 3}
+  newBestSound: {fileID: 8300000, guid: ceb7bfb7f25e8244d99fa28397d49716, type: 3}
+  music: {fileID: 0}

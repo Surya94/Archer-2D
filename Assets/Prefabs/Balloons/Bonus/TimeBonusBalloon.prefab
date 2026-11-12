@@ -296,6 +296,7 @@ MonoBehaviour:
   rb: {fileID: 6930163704050538951}
   animator: {fileID: 9064305637253049708}
   destoryTime: 0.25
+  burstColour: {r: 0, g: 0, b: 0, a: 0}
   bonusType: 1
   tether: {fileID: 5977144897312742936}
   payload: {fileID: 4176976039248232818}
