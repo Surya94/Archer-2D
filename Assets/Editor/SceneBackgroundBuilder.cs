@@ -10,19 +10,20 @@ using Archer.Scripts.Utility;
 namespace Archer.Editor
 {
     /// <summary>
-    /// Replaces the flat FullBG/1_Mountain background in MainMenu and GameScene with the art
-    /// pack's separate layers, and adds a CloudField.
+    /// Builds the layered "sunny meadow" background (Assets/Art/Background) in MainMenu and
+    /// GameScene, and adds a CloudField.
     ///
-    /// Why: the flat image has four clouds painted into it. Drifting clouds on top of frozen
-    /// painted ones is what made the sky look fake. The layered version has a cloud-free sky
-    /// (Layer_0), so every cloud on screen moves, and clouds can sort between the sky and the
-    /// mountains so low ones pass behind the peaks.
+    /// The sky layer is cloud-free, so every cloud on screen moves, and clouds sort between the
+    /// sky and the landscape so low ones pass behind the hills. Each layer is a full 2:1 frame
+    /// imported at 40x20 units (PPU = width / 40), the size the old 4320x2160 / 108 PPU art had,
+    /// so the Background root's 0.5 scale still fills the camera exactly.
     ///
     /// Safe to re-run: an existing Background / CloudField is replaced, not duplicated.
     /// </summary>
     public static class SceneBackgroundBuilder
     {
-        private const string LayerDir = "Assets/Free 2D Cartoon Parallax Background/!_Moutain/";
+        private const string LayerDir = "Assets/Art/Background/";
+        private const string CloudDir = LayerDir + "Clouds/";
         private const string CloudPrefabPath = "Assets/Prefabs/Cloud.prefab";
         private const string LegacyBackgroundName = "sky_background_mountains";
         private const string BackgroundName = "Background";
@@ -34,14 +35,24 @@ namespace Archer.Editor
             "Assets/Scenes/GameScene.unity"
         };
 
-        // Back to front. Clouds (CloudField) sort between the sky and the mountains: -90..-80.
+        // Back to front. Clouds (CloudField) sort between the sky and the landscape: -90..-80.
         private static readonly (string file, string name, int order)[] Layers =
         {
-            ("Layer_0.png", "Sky", -100),
-            ("Layer_2.png", "Mountains", -70),
-            ("Layer_3.png", "Trees", -65),
-            ("Layer_4.png", "Ground", -60),
+            ("Sky.png", "Sky", -100),
+            ("Landscape.png", "Landscape", -70),
         };
+
+        /// <summary>The drifting cloud sprites (Clouds/Cloud_1..n.png), in name order.</summary>
+        public static Sprite[] LoadCloudSprites()
+        {
+            return AssetDatabase.FindAssets("t:Sprite Cloud_", new[] { CloudDir.TrimEnd('/') })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Distinct()
+                .OrderBy(p => p)
+                .Select(AssetDatabase.LoadAssetAtPath<Sprite>)
+                .Where(s => s != null)
+                .ToArray();
+        }
 
         [MenuItem("Archer/Scenes/Build Layered Backgrounds")]
         public static void BuildAll()
@@ -73,7 +84,7 @@ namespace Archer.Editor
             }
 
             // Take placement from whatever currently fills the view, so the new stack lines up
-            // exactly: the layers share the flat image's 4320x2160 size and 108 PPU.
+            // exactly: every layer is imported at the same 40x20 world units.
             Vector3 position = source.transform.position;
             Vector3 scale = source.transform.localScale;
             int sortingLayerId = source.GetComponentInChildren<SpriteRenderer>().sortingLayerID;
@@ -138,10 +149,7 @@ namespace Archer.Editor
             if (old != null) Object.DestroyImmediate(old);
 
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CloudPrefabPath);
-            Sprite[] sprites = AssetDatabase.LoadAllAssetsAtPath(LayerDir + "Layer_1.png")
-                .OfType<Sprite>()
-                .OrderBy(s => s.name)
-                .ToArray();
+            Sprite[] sprites = LoadCloudSprites();
 
             GameObject go = new GameObject(CloudFieldName);
             CloudField field = go.AddComponent<CloudField>();
@@ -154,6 +162,15 @@ namespace Archer.Editor
             spriteArray.arraySize = sprites.Length;
             for (int i = 0; i < sprites.Length; i++)
                 spriteArray.GetArrayElementAtIndex(i).objectReferenceValue = sprites[i];
+
+            // Subtle sky: few, small, half-transparent clouds kept in the top band, drifting
+            // slowly, so they never compete with the balloons crossing the middle of the view.
+            so.FindProperty("cloudCount").intValue = 4;
+            so.FindProperty("scaleRange").vector2Value = new Vector2(0.22f, 0.45f);
+            so.FindProperty("alphaRange").vector2Value = new Vector2(0.45f, 0.75f);
+            so.FindProperty("farHeightRange").vector2Value = new Vector2(0.82f, 0.95f);
+            so.FindProperty("nearHeightRange").vector2Value = new Vector2(0.72f, 0.88f);
+            so.FindProperty("speedRange").vector2Value = new Vector2(0.05f, 0.22f);
 
             so.ApplyModifiedPropertiesWithoutUndo();
 

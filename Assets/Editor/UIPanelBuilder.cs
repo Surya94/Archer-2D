@@ -32,8 +32,7 @@ namespace Archer.Editor
         // serialized reference, so it loads the screen by path.
         private const string LoadingScreenDir = "Assets/Resources/UI";
         private const string LoadingScreenPrefabPath = LoadingScreenDir + "/LoadingScreen.prefab";
-        private const string SkyLayerPath = "Assets/Free 2D Cartoon Parallax Background/!_Moutain/Layer_0.png";
-        private const string CloudLayerPath = "Assets/Free 2D Cartoon Parallax Background/!_Moutain/Layer_1.png";
+        private const string SkyLayerPath = "Assets/Art/Background/Sky.png";
         private const string LogoPath = "Assets/Art/UI/Logo.png";
 
         // UIState values, as serialized enum indices.
@@ -478,15 +477,14 @@ namespace Archer.Editor
             skyImage.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(SkyLayerPath);
             skyImage.raycastTarget = true;
 
-            Sprite[] cloudSprites = AssetDatabase.LoadAllAssetsAtPath(CloudLayerPath)
-                .OfType<Sprite>().OrderBy(s => s.name).ToArray();
+            Sprite[] cloudSprites = SceneBackgroundBuilder.LoadCloudSprites();
 
             // (x, y, scale, alpha): a far cloud high and faint, two nearer ones lower.
             var cloudLayout = new[]
             {
-                new Vector4(-620f, 330f, 0.32f, 0.8f),
-                new Vector4(380f, 250f, 0.45f, 0.95f),
-                new Vector4(-80f, -330f, 0.4f, 0.9f),
+                new Vector4(-620f, 330f, 0.22f, 0.55f),
+                new Vector4(380f, 250f, 0.32f, 0.65f),
+                new Vector4(-80f, -330f, 0.28f, 0.6f),
             };
 
             RectTransform[] clouds = new RectTransform[cloudLayout.Length];

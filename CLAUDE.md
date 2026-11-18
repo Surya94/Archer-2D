@@ -39,6 +39,8 @@ The codebase leans on four hand-rolled infrastructure systems (all in `Assets/Sc
 
 ## Gameplay flow
 
+Background art (sky, landscape, drifting clouds) lives in `Assets/Art/Background/` and is placed in MainMenu and GameScene by `Archer/Scenes/Build Layered Backgrounds` (`Editor/SceneBackgroundBuilder.cs`). Each layer must stay a full 2:1 frame imported at 40x20 units.
+
 Bow and arrow art lives in `Assets/Art/Weapons/`. The bow sprite has no string, because `Bow` draws it between the two `EndPoint` children of the sprite object, which sit on the tip caps. The arrow sprite is level and points along +X. The `Arrow` root is the tip, where the collider is, and its `EndPoint` (the nock, which also carries the trail) is a child of the sprite object. Replacement art must keep these anchor points.
 
 `Bow` (`Manager/Bow.cs`) reads mouse drag input, computes launch force/angle from drag distance (clamped by `BowData`, a ScriptableObject), and renders the bowstring via `LineRenderer`. On release it hands the pooled `Arrow` off (`isFired = true`, sets `Rigidbody2D` velocity) and immediately spawns the next arrow from the pool if `ScoreManager.arrowCount >= 1` (arrows are consumed via `OnAddArrows(-1)` signals, not decremented directly).

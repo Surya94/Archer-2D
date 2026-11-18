@@ -38,6 +38,12 @@ Built by `Assets/Editor/FeelAssetBuilder.cs` (`Archer/FX/Build Feel Assets`):
   tall like the old bow) and `Assets/Art/Weapons/Arrow.png` (level, pointing right, 272.4 PPU so
   nock-to-tip matches the old arrow). Used by `Bow.prefab`, `Arrow.prefab`, the HUD arrow icon
   and `Adding Arrow VFX.prefab`. The original `Elf Archer` bow and arrow are kept but unused.
+- `Assets/Art/Background/Landscape.png` (flat-vector mountains, trees and ground band, generated
+  in the style of the original pack; sky cut out, mountain part lowered so the top ~30% is open
+  sky; 2:1 at 52.8 PPU = 40x20 units), `Sky.png` (the original pack's flat blue-to-white gradient,
+  rebuilt in ffmpeg) and `Clouds/Cloud_1..4.png` (flat circle-cluster clouds, 100 PPU). Built into MainMenu and GameScene by
+  `SceneBackgroundBuilder`, and used by the loading screen. The "Free 2D Cartoon Parallax
+  Background" pack is no longer referenced.
 - `Assets/Art/UI/AppIcon.png` - default app icon (Player Settings): a drawn bow in the bottom-left
   aiming at a bunch of five balloons in the top-right, on a light sky with faint clouds. Three
   separate upscaled Ludo images (bow and balloon cut-outs, sky) laid out by ffmpeg, with the bow
