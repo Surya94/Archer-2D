@@ -34,6 +34,7 @@ namespace Archer.Editor
         private const string LoadingScreenPrefabPath = LoadingScreenDir + "/LoadingScreen.prefab";
         private const string SkyLayerPath = "Assets/Free 2D Cartoon Parallax Background/!_Moutain/Layer_0.png";
         private const string CloudLayerPath = "Assets/Free 2D Cartoon Parallax Background/!_Moutain/Layer_1.png";
+        private const string LogoPath = "Assets/Art/UI/Logo.png";
 
         // UIState values, as serialized enum indices.
         private const int StateMainMenu = 1;
@@ -209,11 +210,7 @@ namespace Archer.Editor
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            // The title is drawn straight over the scenery, so it carries its own outline.
-            TextMeshProUGUI title = UIStyle.CreateText("Title", column, "ARCHER", 176f, UIStyle.TitleRed);
-            title.textWrappingMode = TextWrappingModes.NoWrap;
-            UIStyle.UseOutline(title);
-            title.gameObject.AddComponent<LayoutElement>().preferredHeight = 180f;
+            RectTransform title = CreateTitle(column);
 
             RectTransform bestPill;
             TextMeshProUGUI best = CreateBestPill(column, out bestPill);
@@ -246,7 +243,7 @@ namespace Archer.Editor
                 (RectTransform)settings.transform, soonRow, (RectTransform)quit.transform);
 
             SerializedObject so = new SerializedObject(panel);
-            so.FindProperty("title").objectReferenceValue = (RectTransform)title.transform;
+            so.FindProperty("title").objectReferenceValue = title;
             so.FindProperty("intro").objectReferenceValue = intro;
             ApplyBasePanelFields(so, root, StateMainMenu);
             // The menu is the scene's starting state, so it must NOT hide itself on Awake.
@@ -523,10 +520,7 @@ namespace Archer.Editor
             ContentSizeFitter fitter = column.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            TextMeshProUGUI title = UIStyle.CreateText("Title", column, "ARCHER", 176f, UIStyle.TitleRed);
-            title.textWrappingMode = TextWrappingModes.NoWrap;
-            UIStyle.UseOutline(title);
-            title.gameObject.AddComponent<LayoutElement>().preferredHeight = 180f;
+            CreateTitle(column);
 
             RectTransform track = UIStyle.CreateRect("ProgressTrack", column);
             Image trackImage = track.gameObject.AddComponent<Image>();
@@ -592,6 +586,32 @@ namespace Archer.Editor
         /// card grows with its content instead of relying on a hardcoded height that would
         /// clip or leave a gap when labels change.
         /// </summary>
+        /// <summary>
+        /// The game title: the logo art at <see cref="LogoPath"/> when it exists, otherwise the
+        /// "BALLOON ARCHER" wordmark in TMP. Either way it is drawn straight over the scenery.
+        /// </summary>
+        private static RectTransform CreateTitle(RectTransform parent)
+        {
+            Sprite logo = AssetDatabase.LoadAssetAtPath<Sprite>(LogoPath);
+            if (logo != null)
+            {
+                RectTransform rect = UIStyle.CreateRect("Title", parent);
+                Image image = rect.gameObject.AddComponent<Image>();
+                image.sprite = logo;
+                image.preserveAspect = true;
+                image.raycastTarget = false;
+                rect.gameObject.AddComponent<LayoutElement>().preferredHeight = 280f;
+                return rect;
+            }
+
+            // The text title carries its own outline, since there is no card behind it.
+            TextMeshProUGUI title = UIStyle.CreateText("Title", parent, "BALLOON ARCHER", 120f, UIStyle.TitleRed);
+            title.textWrappingMode = TextWrappingModes.NoWrap;
+            UIStyle.UseOutline(title);
+            title.gameObject.AddComponent<LayoutElement>().preferredHeight = 180f;
+            return (RectTransform)title.transform;
+        }
+
         private static RectTransform CreateCard(RectTransform parent, string title, Color headerColour)
         {
             RectTransform card = UIStyle.Centre(UIStyle.CreateRect("Window", parent), UIStyle.CardWidth, 0f);

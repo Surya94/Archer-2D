@@ -18,11 +18,26 @@ Built by `Assets/Editor/FeelAssetBuilder.cs` (`Archer/FX/Build Feel Assets`):
 
 - `UI/Kit/*.png` - rounded rect, pill, shadow, circle, glow, ring, shard sprites.
 - `FX/Pop*.mat` and `Assets/Prefabs/PopBurst.prefab` - balloon pop particles.
-- `Assets/Sound/Generated/*.wav` - five effects are still synthesized by the builder, because
-  the Kenney packs have nothing that fits: `pop`, `pop_big`, `lightning_zap`, `game_over`,
-  `new_best`. Any slot in `Assets/Resources/Scriptables/Sounds/BowSoundData.asset` can be
+- `Assets/Sound/Generated/*.wav` - `pop` and `pop_big` are still synthesized by the builder and
+  in use. `lightning_zap`, `game_over` and `new_best` are still generated there too, but their
+  slots now point at the Ludo clips below. Any slot in `Assets/Resources/Scriptables/Sounds/BowSoundData.asset` can be
   pointed at a recorded clip, and the builder leaves a slot alone once it no longer points at
   a generated file.
+
+## Generated with Ludo.ai (Indie plan, owned by the project)
+
+- `Assets/Sound/Music/ForestAdventureLoop.wav` - the `music` slot.
+- `Assets/Sound/Ludo/lightning_zap.mp3`, `game_over.mp3`, `new_best.mp3` - replace the synthesized
+  clips in the `lightningZapSound`, `gameOverSound` and `newBestSound` slots.
+- `Assets/Art/Bonus/clock.png`, `bolt.png`, `snowflake.png`, `shuriken.png` - overwrite the
+  code-drawn icons (same paths and GUIDs; `BonusBalloonBuilder` only draws them when missing).
+  `glow.png` and `frost.png` are still code-drawn.
+- `Assets/Art/UI/Logo.png` - stacked "BALLOON ARCHER" title logo; `UIPanelBuilder.CreateTitle`
+  uses it and falls back to TMP text when it is missing.
+- `Assets/Art/UI/AppIcon.png` - default app icon (Player Settings): a drawn bow in the bottom-left
+  aiming at a bunch of five balloons in the top-right, on a light sky with faint clouds. Three
+  separate upscaled Ludo images (bow and balloon cut-outs, sky) laid out by ffmpeg, with the bow
+  rotated 45 degrees; corners are square.
 
 ## Which Kenney clip is in which slot
 

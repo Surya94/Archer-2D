@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-Archer 2D is a Unity 2D mobile-style archery game: drag-to-draw a bow, fire arrows at balloon enemies that float toward an end point, score points, and manage a limited arrow supply that regenerates on hit streaks.
+Balloon Archer (repo/folder name: Archer 2D; `productName` "Balloon Archer", Android ID `com.stillpoint.balloonarcher`) is a Unity 2D mobile-style archery game: drag-to-draw a bow, fire arrows at balloon enemies that float toward an end point, score points, and manage a limited arrow supply that regenerates on hit streaks.
 
 - Engine: Unity **6000.5.6f1** (Unity 6). Open the project with this exact editor version via Unity Hub — mismatched versions will trigger a reimport and can churn `.meta`/serialized scene data.
 - There is no CLI build/test pipeline in this repo (no Makefile, package.json, or CI config). All building, playing, and testing happens inside the Unity Editor:
