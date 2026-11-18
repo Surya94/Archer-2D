@@ -171,6 +171,8 @@ namespace Archer.Editor
             so.FindProperty("farHeightRange").vector2Value = new Vector2(0.82f, 0.95f);
             so.FindProperty("nearHeightRange").vector2Value = new Vector2(0.72f, 0.88f);
             so.FindProperty("speedRange").vector2Value = new Vector2(0.05f, 0.22f);
+            // Twilight sky: far clouds fade toward dusk lavender, not daytime pale blue.
+            so.FindProperty("hazeColour").colorValue = new Color32(0x8A, 0x86, 0xC4, 0xFF);
 
             so.ApplyModifiedPropertiesWithoutUndo();
 
