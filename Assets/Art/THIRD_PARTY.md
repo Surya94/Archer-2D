@@ -34,6 +34,10 @@ Built by `Assets/Editor/FeelAssetBuilder.cs` (`Archer/FX/Build Feel Assets`):
   `glow.png` and `frost.png` are still code-drawn.
 - `Assets/Art/UI/Logo.png` - stacked "BALLOON ARCHER" title logo; `UIPanelBuilder.CreateTitle`
   uses it and falls back to TMP text when it is missing.
+- `Assets/Art/Weapons/Bow.png` (string-free red-brown recurve, 168.6 PPU so it is 5.93 units
+  tall like the old bow) and `Assets/Art/Weapons/Arrow.png` (level, pointing right, 272.4 PPU so
+  nock-to-tip matches the old arrow). Used by `Bow.prefab`, `Arrow.prefab`, the HUD arrow icon
+  and `Adding Arrow VFX.prefab`. The original `Elf Archer` bow and arrow are kept but unused.
 - `Assets/Art/UI/AppIcon.png` - default app icon (Player Settings): a drawn bow in the bottom-left
   aiming at a bunch of five balloons in the top-right, on a light sky with faint clouds. Three
   separate upscaled Ludo images (bow and balloon cut-outs, sky) laid out by ffmpeg, with the bow

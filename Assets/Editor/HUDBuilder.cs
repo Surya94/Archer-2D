@@ -22,7 +22,10 @@ namespace Archer.Editor
     {
         private const string GameScenePath = "Assets/Scenes/GameScene.unity";
         private const string ScoreVfxPrefabPath = "Assets/Prefabs/Score VFX.prefab";
+        // The original pack arrow: only used to recognise the legacy HUD's arrow Image.
         private const string ArrowSpritePath = "Assets/Art/Elf Archer/arrow.png";
+        // The arrow the player shoots (Arrow.prefab), drawn level and pointing right.
+        private const string ArrowIconSpritePath = "Assets/Art/Weapons/Arrow.png";
 
         internal const string SafeAreaName = "SafeArea";
 
@@ -67,7 +70,8 @@ namespace Archer.Editor
 
             RectTransform arrowIcon;
             TextMeshProUGUI arrowText;
-            RectTransform arrowPill = BuildArrowPill(safeArea, arrowSprite, out arrowIcon, out arrowText);
+            Sprite arrowIconSprite = AssetDatabase.LoadAssetAtPath<Sprite>(ArrowIconSpritePath);
+            RectTransform arrowPill = BuildArrowPill(safeArea, arrowIconSprite, out arrowIcon, out arrowText);
 
             TextMeshProUGUI comboText;
             RectTransform comboBadge = BuildComboBadge(safeArea, out comboText);
@@ -223,14 +227,15 @@ namespace Archer.Editor
             icon.preserveAspect = true;
             icon.raycastTarget = false;
             if (arrowSprite == null)
-                Debug.LogWarning("[HUDBuilder] Arrow sprite not found at " + ArrowSpritePath + "; icon will be blank.");
+                Debug.LogWarning("[HUDBuilder] Arrow sprite not found at " + ArrowIconSpritePath + "; icon will be blank.");
             iconRt.anchorMin = new Vector2(0f, 0.5f);
             iconRt.anchorMax = new Vector2(0f, 0.5f);
             iconRt.pivot = new Vector2(0.5f, 0.5f);
             iconRt.anchoredPosition = new Vector2(90f, 0f);
             iconRt.sizeDelta = new Vector2(140f, 48f);
-            // Tilted up like a nocked shot - reads as "ammo" faster than a flat arrow.
-            iconRt.localRotation = Quaternion.Euler(0f, 0f, 25f);
+            // Tilted up like a nocked shot - reads as "ammo" faster than a flat arrow. The art
+            // itself is level, so this is the whole tilt.
+            iconRt.localRotation = Quaternion.Euler(0f, 0f, 15f);
 
             countText = UIStyle.CreateText("ArrowCount", pill, "×10", 76f, UIStyle.ValueSlate,
                 TextAlignmentOptions.Left);
